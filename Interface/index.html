@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Thesis Project</title>
+	<link rel="stylesheet" type="text/css" href="css/index.css">
+</head>
+<body>
+	<div class="header"></div>
+	<div class="sidebar">
+		<div class="spinner">
+			<div class="ring"></div>
+			<div class="animation"></div>
+			<div class="circle">
+				<span class="status"></span>
+			</div>
+		</div>
+		<div class="action message"></div>
+		<a class="init button">Initialize</a>
+		<a class="start button">Start</a>
+		<a class="stop button">Stop</a>
+		<a class="reset button">Stop</a>
+	</div>
+	<div class="content">
+		<div class="error panel box"></div>
+		<div class="help panel box">Help</div>
+		<div class="control panel sources">
+			<div class="box">
+				<span class="title">Source Groups</span>
+				<ul class="groups">
+				</ul>
+				<div class="new source">
+					<span class="label">Add new RSS group:</span>
+					<span class="add"></span>
+					<input id="groupName" type="text" name="groupName" value="">
+					<input id="groupColor" type="color" name="groupColor" value="#9DE">
+				</div>
+			</div>
+			<ul class="presets">
+				<li class="box preset 1">
+					Preset 1
+				</li>
+				<li class="box preset 2">
+					Preset 2
+				</li>
+				<li class="box preset 3">
+					Preset 3
+				</li>
+				<li class="box preset 4">
+					Preset 4
+				</li>
+			</ul>
+		</div>
+		<div class="control panel box settings">
+			<span class="title">Settings</span>
+			<ul class="options">
+				<li class="option">
+					<span class="label">Data from:</span>
+					<input id="fromTime" type="datetime-local" name="fromTime">
+				</li>
+				<li class="option">
+					<span class="label">Data from:</span>
+					<input id="toTime" type="datetime-local" name="fromTime">
+				</li>
+				<li class="option">
+					<span class="label">Refresh rate (s):</span>
+					<input id="dataRate" type="number" name="dataRate">
+				</li>
+				<li class="option">
+					<span class="label">RSS pull rate (s):</span>
+					<input id="rssRate" type="number" name="rssRate">
+				</li>
+			</ul>
+		</div>
+		<div class="data panel box">Data</div>
+		<div class="data panel box">Filters</div>
+	</div>
+	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/index.js"></script>
+</body>
+</html>

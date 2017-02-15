@@ -1,0 +1,419 @@
+/* ================= General ================= */
+
+body {
+
+	display: flex;
+	flex-wrap: wrap;
+
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0;
+
+	background-color: #37E;
+
+	font-family: sans-serif;
+}
+
+ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+* {
+
+	transition: background-color 400ms;
+}
+
+/* ============ Header & Sidebar ============= */
+
+
+.header {
+
+	height: 80px;
+	width: 100%;
+	margin: 10px auto;
+
+	background-color: #EEE;
+	/*border: 1px solid #484;*/
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.sidebar {
+
+	width: 160px;
+	margin-top: 9px;
+
+	display: flex;
+	flex-flow: column;
+	align-self: flex-start;
+	align-items: center;
+
+	background-color: #444;
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	color: #222;
+}
+
+.spinner {
+
+	position: relative;
+	width: 120px;
+	height: 100px;
+	margin: 20px auto;
+}
+.animation {
+
+	position: absolute;
+	width: 100px;
+	height: 100px;
+}
+
+.spinner .ring {
+
+	display: block;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	left: 0;
+	border-top: solid 10px transparent;
+	border-bottom: solid 10px transparent;
+	border-left: solid 10px white;
+	border-right: solid 10px white;
+	content: "";
+	border-radius: 50px;
+	animation: spinner 1s infinite ease;
+}
+
+.spinner .circle {
+
+	display: block;
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	left: 0;
+	margin: auto;
+	width: 50px;
+	height: 50px;
+	border-radius: 25px;
+	transition: width 1s ease 1s, height 1s ease 1s, border-radius 1s ease 1s, background-color 2s;
+
+	background-color: #AAA;
+	box-shadow: inset 0 4px 8px 0 rgba(0, 0, 0, 0.2), inset 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+	content: "";
+	text-align: center;
+}
+
+@keyframes spinner {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.spinner .status::before {
+
+	display: inline-block;
+	height: 100%;
+	vertical-align: middle;
+	content:"";
+}
+
+.spinner .status {
+
+	vertical-align: middle;
+	font-weight: bold;
+}
+
+.action.message {
+
+	display: none;
+	margin: 10px;
+	padding: 10px;
+
+	font-weight: bold;
+}
+
+
+.button {
+
+	min-width: 50px;	
+	margin: 10px;
+	padding: 10px;
+
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.4), 0 6px 8px 0 rgba(0, 0, 0, 0.3);
+	transition: width 1s ease 1s;
+	text-align: center;
+	cursor: pointer;
+}
+
+.init.button {
+
+	background-color: #DB1;
+}
+.start.button {
+
+	display: none;
+	background-color: #1A0;
+}
+.stop.button {
+
+	display: none;
+	background-color: #E33;
+}
+.reset.button {
+
+	display: none;
+	background-color: #28F;
+}
+
+/* ============== Main Content =============== */
+
+.content {
+
+	flex: 1;
+
+}
+
+.box {
+	padding: 10px 20px;
+
+	background-color: white;
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.panel {
+
+	margin: 10px 0 10px 20px;
+}
+
+.error.box {
+
+	display: none;
+	background-color: #F88;
+}
+
+
+/* -------------- Control Boxes -------------- */
+
+.box .title {
+
+	display: inline-block;
+	margin: 10px 10px 30px;
+
+	font-weight: bold;
+	font-size: large;
+}
+
+.sources.panel {
+
+	display: flex;
+	justify-content: space-between;
+}
+
+.sources .box {
+
+	flex: 5;
+}
+
+.groups {
+
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	min-height: 200px;
+	padding: 10px;
+
+	background-color: #888;
+	box-shadow: inset 0 4px 8px 0 rgba(0, 0, 0, 0.2), inset 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.group {
+
+	min-width: 242px;
+	margin: 10px;
+	padding: 5px 0;
+
+	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.group .name {
+
+	display: inline-block;
+	margin: 4px auto;
+	padding: 4px 8px;
+
+
+	text-align: center;
+}
+.group .delete {
+
+	display: inline-block;
+	float: right;
+	vertical-align: top;
+	padding: 3px 7px 5px;
+	margin: 2px 10px 0 0;
+
+	background-color: white;
+	border: 1px solid #888;
+	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.19);
+	font-weight: bold;
+}
+
+.feed {
+
+	display: flex;
+	margin: 5px 10px;
+
+	background-color: white;
+	border: 1px solid #888;
+	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.19);
+
+}
+
+.feed .add, .feed .remove {
+
+	display: inline-block;
+	padding: 3px 5px 7px;
+
+	font-weight: bold;
+	font-size: large;
+	border-right: 1px solid #888;
+}
+.feed .add {
+
+	padding: 5px 7px;
+}
+
+.feed .url, .feed input {
+
+	display: inline-block;
+	margin: 5px;	
+}
+.feed input {
+
+	vertical-align: top;
+	flex: 1;
+	width: 1px;
+	min-width: 1px;
+
+	margin: 4px 5px 3px; 
+	padding: 3px 1px;
+	border: 1px solid #888;
+	border-radius: 0;
+}
+
+
+.new.source {
+
+	display: flex;
+	align-items: center;
+	margin-top: 10px;
+}
+.new.source .label {
+
+	margin-right: 20px;
+}
+.new.source .add {
+
+	display: inline-block;
+	padding: 1px 6px 3px;
+
+	font-weight: bold;
+	font-size: large;
+	border: 1px solid #888;
+}
+.new.source input {
+
+	vertical-align: top;
+	height: 26px;
+	padding: 0 4px;
+	border: 1px solid #888;
+	border-radius: 0;
+}
+.new.source input[type='text'] {
+
+	flex: 1;
+}
+.new.source input[type='color'] {
+
+	height: 28px;
+	padding: 2px 4px;
+}
+
+
+
+.presets {
+
+	margin: -10px 0 -10px 10px;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.preset {
+
+	margin: 10px 0;
+	text-align: center;
+}
+
+.options {
+
+	display: flex;
+	flex-wrap: wrap;
+}
+.option {
+
+	margin: 5px 40px 5px 5px;
+	padding: 5px; 
+
+	background-color: #EEE;
+	box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.2), 0 3px 10px 0 rgba(0, 0, 0, 0.19);
+}
+
+.option .label {
+
+	margin-right: 20px;
+}
+.option input {
+
+	margin: 5px; 
+	padding: 5px;
+	padding-right: 0;
+	border: 1px solid #888;
+	border-radius: 0;
+}
+.option input[type='number'] {
+
+	width: 50px;
+}
+.option input[type='date'] {
+
+	/*width: 50px;*/
+}
+
+/* ============= Final Behaviors ============= */
+
+.add:before {
+	content: "+";
+}
+.remove:before {
+	content: "\2014";
+}
+.delete:before {
+	content: "x";
+}
+.add:hover, .remove:hover, .delete:hover, .preset:hover {
+
+	background-color: #DDD;
+	cursor: pointer;
+}
+.add, .remove, .delete {
+
+	transition: background-color 200ms;
+}
