@@ -6,6 +6,7 @@ $( document ).ready( function() {
 
 	var timer;
 	var groups = [];
+	var settings = [];
 
 	// ============ Visual Functions ============
 
@@ -176,7 +177,7 @@ $( document ).ready( function() {
 	function addGroup( name, color ) {
 
 		// check everything's provided
-		if ( typeof name === "string" && name !== "" && typeof color === "string" && color !== "" ) {
+		if ( name != "" && color != "" ) {
 
 			group = $(
 				'<li class="group">' +
@@ -225,7 +226,7 @@ $( document ).ready( function() {
 	function addFeed( group, url ) {
 
 		// check url
-		if ( typeof url === "string" && url !== "" ) {
+		if ( url !== "" ) {
 
 			feed = $(
 				'<li class="feed">' +
@@ -250,10 +251,9 @@ $( document ).ready( function() {
 		$( event.target ).parent().remove();
 	}
 
-	function setGroups() {
+	function getGroups() {
 
-		var success = true;
-		groups = [];
+		var newGroups = [];
 
 		$( ".group" ).each( function() {
 
@@ -266,28 +266,88 @@ $( document ).ready( function() {
 
 				var url = $( this ).find( ".url" ).text();
 
-				if ( typeof url === "string" && url !== "" ) {
+				if ( url != "" ) {
 
 					feeds.push( url );
 
 				} else {
-					success = false;
+
 					flashError( $( this ) );
+					return false;
 				}
 			} );
 
 			// check results for empty items
-			if ( typeof name === "string" && name !== "" && feeds.length > 0 ) {
+			if ( name != "" && feeds.length > 0 ) {
 
-				groups.push( group );
+				newGroups.push( group );
 
 			} else {
-				success = false;
+
 				flashError( $( this ), $( this ).css( "background-color" ) );
+				return false;
 			}
 		} );
 
-		return success && groups.length > 0;
+		if ( newGroups.length > 0 ) {
+
+			return newGroups;
+
+		} else {
+
+			flashError( $( ".groups" ), $( ".groups" ).css( "background-color" ) );
+			return false;
+		}
+	}
+
+	function getSettings() {
+
+		var newSettings = { "dateType": "", "date": "", "dataRate": 0, "rssRate": 0 };
+
+
+		newSettings.dateType = $( "input[name=dateType]:checked" ).val();
+
+		if ( newSettings.dateType == "historical" ) {
+
+			var date = $( ".settings input[name=date]" ).val();
+			var dateReg = /^\d{4}([/-])\d{2}\1\d{2}$/;
+
+			if ( date.match( dateReg ) ) {
+
+				newSettings.date = date.replace( "/", "-" );
+
+			} else {
+
+				flashError( $( "input[name=date]" ) );
+				return false;
+			}
+		}
+
+		var dataRate = $( "#dataRate" ).val();
+
+		if ( dataRate != "" && typeof parseInt( dataRate ) == "number" ) {
+
+			newSettings.dataRate = dataRate;
+
+		} else {
+
+			flashError( $( "#dataRate" ) );
+			return false;
+		}
+
+		var rssRate = $( "#rssRate" ).val();
+
+		if ( rssRate != "" && typeof parseInt( rssRate ) == "number" ) {
+
+			newSettings.rssRate = rssRate;
+
+		} else {
+
+			flashError( $( "#rssRate" ) );
+			return false;
+		}
+
+		return newSettings;
 	}
 
 	function applyPreset1() {
@@ -296,6 +356,12 @@ $( document ).ready( function() {
 
 		var group = addGroup( "TEST", "#123456" );
 		addFeed( group, "test" );
+
+		$( "#dateTypeHistorical" ).click();
+		$( ".settings input[name=date]" ).val( "2017-02-15" );
+
+		$( "#dataRate" ).val( "1" );
+		$( "#rssRate" ).val( "600" );
 	}
 
 
@@ -304,22 +370,51 @@ $( document ).ready( function() {
 	$( ".init.button" ).click( boot );
 	$( ".start.button" ).click( start );
 
+	// ------------------------------------------
+
+	// Add group
 	$( ".new.source .add" ).click( function() {
 
 		addGroup( $( "#groupName" ).val(), $( "#groupColor" ).val() );
 	} );
+
+	// Delete group
 	$( ".group .delete" ).click( removeGroup );
 
+	// Add feed
 	$( ".new.feed .add" ).click( function( event ) {
 
 		var group = $( event.target ).parents( ".group" );
 		var url = $( event.target ).siblings( "input" ).val();
 		addFeed( group, url );
-		
+
 	} );
+
+	// Remove feed
 	$( ".feed .remove" ).click( removeFeed );
 
+	// Presets
 	$( ".preset.1" ).click( applyPreset1 );
+	$( ".preset.2" ).click( function() {
+
+		console.log( $( "input[type='date']" ).val() ); // DEBUG ONLY
+	} );
+
+	// Options
+	$( ".option input[type='date']" ).click( function() {
+
+		$( "#dateTypeHistorical" ).click();
+	} );
+	$( "#dateTypeLive" ).click( function() {
+
+		$( ".option input[type='date']" ).css( { "background-color": "#EEE" } );
+	} );
+	$( "#dateTypeHistorical" ).click( function() {
+
+		$( ".option input[type='date']" ).css( { "background-color": "white" } );
+	} );
+
+
 
 	// =========== Control Functions ============
 
@@ -383,8 +478,39 @@ $( document ).ready( function() {
 
 	function start() {
 
-		console.log( setGroups() );
-		console.log( groups );
+		var groupsResult = getGroups();
+		var settingsResult = getSettings();
+
+		if ( !groupsResult || !settingsResult ) {
+
+			return false;
+		}
+
+		groups = groupsResult;
+		settings = settingsResult;
+
+		$.post( {
+			url: "start",
+			data: JSON.stringify( { "groups": groups, "settings": settings } ),
+			dataType: "json",
+			error: function( error ) {
+
+				showError( error.responseText );
+			},
+			success: function( data ) {
+
+				if ( data.state == "idle" ) {
+
+					data[ 'error' ] = "Nothing Happened";
+
+				} else {
+
+					timer = setTimeout( checkBooted, refreshTime );
+				}
+
+				showStatus( data );
+			}
+		} );
 	}
 
 	// =============== Page Load ================

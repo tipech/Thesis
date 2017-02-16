@@ -30,46 +30,47 @@
 				</ul>
 				<div class="new source">
 					<span class="label">Add new RSS group:</span>
-					<span class="add"></span>
-					<input id="groupName" type="text" name="groupName" value="">
-					<input id="groupColor" type="color" name="groupColor" value="#9DE">
+					<div class="wrapper">
+						<span class="add"></span>
+						<input id="groupName" type="text" name="groupName" value="">
+						<input id="groupColor" type="color" name="groupColor" value="#90D0E0">
+					</div>
 				</div>
 			</div>
 			<ul class="presets">
-				<li class="box preset 1">
-					Preset 1
-				</li>
-				<li class="box preset 2">
-					Preset 2
-				</li>
-				<li class="box preset 3">
-					Preset 3
-				</li>
-				<li class="box preset 4">
-					Preset 4
-				</li>
+				<li class="box preset 1">Preset 1</li>
+				<li class="box preset 2">Preset 2</li>
+				<li class="box preset 3">Preset 3</li>
+				<li class="box preset 4">Preset 4</li>
 			</ul>
 		</div>
-		<div class="control panel box settings">
-			<span class="title">Settings</span>
-			<ul class="options">
-				<li class="option">
-					<span class="label">Data from:</span>
-					<input id="fromTime" type="datetime-local" name="fromTime">
-				</li>
-				<li class="option">
-					<span class="label">Data from:</span>
-					<input id="toTime" type="datetime-local" name="fromTime">
-				</li>
-				<li class="option">
-					<span class="label">Refresh rate (s):</span>
-					<input id="dataRate" type="number" name="dataRate">
-				</li>
-				<li class="option">
-					<span class="label">RSS pull rate (s):</span>
-					<input id="rssRate" type="number" name="rssRate">
-				</li>
-			</ul>
+		<div class="control panel settings">
+			<div class="box">
+				<span class="title">Settings</span>
+				<ul class="options">
+					<li class="option">
+						<span class="label">Date:</span>
+						<div class="wrapper">
+							<span>
+								<input id="dateTypeHistorical" type="radio" name="dateType" value="historical" checked="checked">
+								<input type="date" name="date" placeholder=" yyyy-mm-dd">
+							</span>
+							<span>
+								<input id="dateTypeLive" type="radio" name="dateType" value="live">
+								<label for="dateTypeLive">Today (real-time)</label>
+							</span>						
+						</div>					
+					</li>
+					<li class="option">
+						<span class="label">Refresh rate (s):</span>
+						<input id="dataRate" type="number" name="dataRate">
+					</li>
+					<li class="option">
+						<span class="label">RSS pull rate (s):</span>
+						<input id="rssRate" type="number" name="rssRate">
+					</li>
+				</ul>
+			</div>
 		</div>
 		<div class="data panel box">Data</div>
 		<div class="data panel box">Filters</div>

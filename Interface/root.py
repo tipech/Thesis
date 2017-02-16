@@ -42,6 +42,17 @@ def boot():
 	return json.dumps(status)
 
 
+@post('/start')
+def start():
+
+	data = json.loads( request.body.read() )
+
+	if( data['settings']['dateType'] == "historical" ):
+		status['state'] = "batch"
+
+	return json.dumps(status)
+
+
 # ================ Static Pages =================
 
 @route('/')
@@ -51,6 +62,10 @@ def static_html():
 @route('/css/index.css')
 def static_css():
 	return static_file("index.css", root = webRoot + 'css')
+
+@route('/favicon.ico')
+def static_css():
+	return static_file("favicon.png", root = webRoot )
 
 @route('/js/jquery.js')
 def static_jquery():
