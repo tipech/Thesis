@@ -23,21 +23,21 @@ def getStatus():
 @post('/init')
 def boot():
 
+	global process
 	process = subprocess.Popen(
 			[
 				"java",
 				"-Dhttp.proxyHost=icache",
 				"-Dhttp.proxyPort=80", "-jar",
-				projectRoot + "Core/target/thesis-0.1.jar"
+				projectRoot + "Core/target/thesis-0.1-jar-with-dependencies.jar"
 			],
 			stdin=subprocess.PIPE
+			# stdout=subprocess.PIPE
 		)
 
     # This boots quickly for now, skip waiting for boot phase
 	if ( process.poll() is None ):
 		status['state'] = "idle"
-
-	process.stdin.close()
 
 	return json.dumps(status)
 
@@ -45,10 +45,17 @@ def boot():
 @post('/start')
 def start():
 
-	data = json.loads( request.body.read() )
+	dataJson = request.body.read()
 
-	if( data['settings']['dateType'] == "historical" ):
-		status['state'] = "batch"
+	# data = json.loads( dataJson )
+	# if( data['settings']['dateType'] == "historical" ):
+		# status['state'] = "batch"
+
+	global process
+
+	process.stdin.write('{ "command": "start", "data": ' + dataJson + "}\n")
+	# process.stdin.write('{ "command": "quit"}\n')
+
 
 	return json.dumps(status)
 

@@ -280,6 +280,7 @@ $( document ).ready( function() {
 			// check results for empty items
 			if ( name != "" && feeds.length > 0 ) {
 
+				group.feeds = feeds;
 				newGroups.push( group );
 
 			} else {
@@ -354,11 +355,15 @@ $( document ).ready( function() {
 
 		$( ".group" ).remove();
 
-		var group = addGroup( "TEST", "#123456" );
-		addFeed( group, "test" );
+		var group1 = addGroup( "BBC", "#a91717" );
+		addFeed( group1, "http://feeds.bbci.co.uk/news/rss.xml" );
+		addFeed( group1, "http://feeds.bbci.co.uk/news/world/rss.xml" );
+
+		var group2 = addGroup( "Fox News", "#fff45b" );
+		addFeed( group2, "http://feeds.foxnews.com/foxnews/latest?format=xml" );
 
 		$( "#dateTypeHistorical" ).click();
-		$( ".settings input[name=date]" ).val( "2017-02-15" );
+		$( ".settings input[name=date]" ).val( "2017-03-02" );
 
 		$( "#dataRate" ).val( "1" );
 		$( "#rssRate" ).val( "600" );
@@ -394,8 +399,8 @@ $( document ).ready( function() {
 	$( ".feed .remove" ).click( removeFeed );
 
 	// Presets
-	$( ".preset.1" ).click( applyPreset1 );
-	$( ".preset.2" ).click( function() {
+	$( ".preset._1" ).click( applyPreset1 );
+	$( ".preset._2" ).click( function() {
 
 		console.log( $( "input[type='date']" ).val() ); // DEBUG ONLY
 	} );
@@ -488,6 +493,8 @@ $( document ).ready( function() {
 
 		groups = groupsResult;
 		settings = settingsResult;
+
+		console.log(JSON.stringify( { "groups": groups, "settings": settings } ));
 
 		$.post( {
 			url: "start",

@@ -8,6 +8,7 @@ import java.util.List;
  */
 public class Feed {
 
+	final String url;
 	final String title;
 	final String link;
 	final String description;
@@ -17,8 +18,9 @@ public class Feed {
 
 	final List<FeedMessage> entries = new ArrayList<FeedMessage>();
 
-	public Feed(String title, String link, String description, String language,
+	public Feed(String url, String title, String link, String description, String language,
 		String copyright, String pubDate) {
+		this.url = url;
 		this.title = title;
 		this.link = link;
 		this.description = description;
@@ -27,8 +29,12 @@ public class Feed {
 		this.pubDate = pubDate;
 	}
 
-	public List<FeedMessage> getMessages() {
+	public List<FeedMessage> getEntries() {
 		return entries;
+	}
+
+	public String getUrl() {
+		return url;
 	}
 
 	public String getTitle() {
@@ -57,7 +63,7 @@ public class Feed {
 
 	@Override
 	public String toString() {
-		return "Feed [copyright=" + copyright + ", description=" + description
+		return "Feed " + url + " [copyright=" + copyright + ", description=" + description
 		+ ", language=" + language + ", link=" + link + ", pubDate="
 		+ pubDate + ", title=" + title + "]";
 	}

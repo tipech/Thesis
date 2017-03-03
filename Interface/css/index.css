@@ -359,15 +359,18 @@ ul {
 
 	margin: -10px 0 -10px 10px;
 	flex: 1;
-	display: flex;
-	flex-direction: column;
-	justify-content: space-between;
 }
 
 .preset {
 
+	height: 40px;
 	margin: 10px 0;
 	text-align: center;
+}
+.preset._1 {
+
+	background-color: #a91717;
+	color: white;
 }
 
 .control.panel.settings::after {

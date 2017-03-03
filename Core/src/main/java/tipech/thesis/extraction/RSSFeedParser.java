@@ -3,6 +3,7 @@ package tipech.thesis.extraction;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import javax.net.ssl.SSLException;
 import java.net.URL;
 
 import javax.xml.stream.XMLEventReader;
@@ -36,7 +37,7 @@ public class RSSFeedParser {
 		}
 	}
 
-	public Feed readFeed() {
+	public Feed readFeed() throws SSLException {
 		Feed feed = null;
 		try {
 			boolean isFeedHeader = true;
@@ -66,8 +67,7 @@ public class RSSFeedParser {
 					case ITEM:
 						if (isFeedHeader) {
 							isFeedHeader = false;
-							feed = new Feed(title, link, description, language,
-									copyright, pubdate);
+							feed = new Feed(this.url.toString(), title, link, description, language,	copyright, pubdate);
 						}
 						event = eventReader.nextEvent();
 						break;
@@ -104,12 +104,14 @@ public class RSSFeedParser {
 						message.setGuid(guid);
 						message.setLink(link);
 						message.setTitle(title);
-						feed.getMessages().add(message);
+						feed.getEntries().add(message);
 						event = eventReader.nextEvent();
 						continue;
 					}
 				}
 			}
+		} catch (SSLException e){
+			throw new SSLException(e);
 		} catch (XMLStreamException e) {
 			throw new RuntimeException(e);
 		}
@@ -126,9 +128,11 @@ public class RSSFeedParser {
 		return result;
 	}
 
-	private InputStream read() {
+	private InputStream read() throws SSLException{
 		try {
 			return url.openStream();
+		} catch (SSLException e){
+			throw new SSLException(e);
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
