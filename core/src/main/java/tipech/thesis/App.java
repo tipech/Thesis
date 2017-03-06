@@ -13,7 +13,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.IllegalStateException;
 import javax.net.ssl.SSLException;
+import java.net.URISyntaxException;
 
+import rake4j.core.model.Document;
+import rake4j.core.RakeAnalyzer;
 
 import tipech.thesis.extraction.ControlMessage;
 import tipech.thesis.extraction.Group;
@@ -87,11 +90,20 @@ public class App
 							for (FeedMessage headline : feed.getEntries()) {
 
 								System.out.println(headline);
+
+								Document doc = new Document(headline.getTitle());
+								RakeAnalyzer rake = new RakeAnalyzer();
+								rake.loadDocument(doc);
+								rake.run();
+								System.out.println(doc.termMapToString());
+
 							}
 
 
 
 						} catch(SSLException e){
+							System.out.println("RSS over https connection not supported!");
+						} catch(URISyntaxException e){
 							System.out.println("RSS over https connection not supported!");
 						}
 
