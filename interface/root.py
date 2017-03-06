@@ -5,7 +5,7 @@ import json, time, os, subprocess, sqlite3
 status = { 'state':'off', 'rate': 0 }
 process = None;
 projectRoot = "~/Projects/Thesis/" if os.path.isdir("~/Projects/Thesis") else "../" 
-webRoot = projectRoot + "Interface/"
+webRoot = projectRoot + "interface/"
 
 # =================== Actions ===================
 
@@ -29,7 +29,7 @@ def boot():
 				"java",
 				"-Dhttp.proxyHost=icache",
 				"-Dhttp.proxyPort=80", "-jar",
-				projectRoot + "Core/target/thesis-0.1-jar-with-dependencies.jar"
+				projectRoot + "core/target/wrapper-jar-with-dependencies.jar"
 			],
 			stdin=subprocess.PIPE
 			# stdout=subprocess.PIPE

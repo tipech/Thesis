@@ -53,8 +53,6 @@ public class App
 			String input;
 			String feedUrl;
 
-			// List<String> feeds = new ArrayList<String>();
-
 			// ============ Main Loop ===========
 			while ( System.currentTimeMillis() < TIMEOUT && !done ) {
 
@@ -143,6 +141,10 @@ public class App
 		} else {
 			return null;
 		}
+	}
+
+	private static List<String> extractKeywords(String message){
+		return null;
 	}
 }
 
