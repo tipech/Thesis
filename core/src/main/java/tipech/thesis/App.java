@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.IllegalStateException;
 import javax.net.ssl.SSLException;
-// import java.net.URISyntaxException;
 
 import com.sree.textbytes.jtopia.Configuration;
 import com.sree.textbytes.jtopia.TermsExtractor;
@@ -122,8 +121,9 @@ public class App
 
 
 									// Keyword extraction
-									termDocument = termExtractor.extractTerms(headline.getTitle());
 									System.out.println(headline.getTitle());
+									System.out.println(headline.getDescription());
+									termDocument = termExtractor.extractTerms(headline.getTitle() + " " + headline.getDescription());
 									System.out.println(termDocument.getFinalFilteredTerms());
 									System.out.println("");
 
@@ -137,8 +137,6 @@ public class App
 
 						} catch(SSLException e){
 							System.out.println("RSS over https connection not supported!");
-						// } catch(URISyntaxException e){
-						// 	System.out.println("Something went wrong during keyword extraction!");
 						}
 
 						// Move on to the next feed/group
