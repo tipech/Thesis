@@ -40,27 +40,18 @@ public class App
 
 	private static STATE state;
 
-	private static final long TIMEOUT = System.currentTimeMillis()+ 20*1000;
 	private static BufferedReader bufferedReader;
+	private static TermsExtractor termExtractor = new TermsExtractor();
 
 
 	public static void main( String[] args )
 	{
 		try {
 
-			bufferedReader = new BufferedReader(new InputStreamReader(System.in));
-
+			// ---------- General configuration -----------
+			long TIMEOUT = System.currentTimeMillis()+ 20*1000;
 			state = STATE.IDLE;
-			boolean done = false;
-			List<Group> groupsList = new ArrayList<Group>();
-			int groupIndex = 0;
-			int feedIndex = 0;
-			int messageCount = 0;
-			String input;
-			String feedUrl;
 
-			LocalDate rejectDate = null;
-        	DateTimeFormatter rssDateFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz");
 
 			// ----- Keyword extraction configuration -----
 			// Options:
@@ -71,8 +62,21 @@ public class App
 			Configuration.setModelFileLocation("lib/jtopia/model/stanford/english-left3words-distsim.tagger");
 			Configuration.setSingleStrength(1);
 			Configuration.setNoLimitStrength(1);
-			TermsExtractor termExtractor = new TermsExtractor();
-			TermDocument termDocument = new TermDocument();
+
+			// --------- Internal Loop variables ----------
+			boolean done = false;
+			String input;
+			bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+
+			DateTimeFormatter rssDateFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz");
+			LocalDate rejectDate = null;
+			
+			List<Group> groupsList = new ArrayList<Group>();
+			int groupIndex = 0;
+			int feedIndex = 0;
+			int messageCount = 0;
+			String feedUrl;
+
 
 			// ============ Main Loop ===========
 			while ( System.currentTimeMillis() < TIMEOUT && !done ) {
@@ -112,29 +116,19 @@ public class App
 							Feed feed = parser.readFeed();
 							for (FeedMessage headline : feed.getEntries()) {
 
-
-								// Data filtering
+								// Data filtering by date
 								if( LocalDate.parse(headline.getPubDate(), rssDateFormat).isAfter(rejectDate) ){
 								
-
-
-
-
 									// Keyword extraction
 									System.out.println(headline.getTitle());
 									System.out.println(headline.getDescription());
-									termDocument = termExtractor.extractTerms(headline.getTitle() + " " + headline.getDescription());
-									System.out.println(termDocument.getFinalFilteredTerms());
+									System.out.println( extractKeywords(headline.getTitle() + " " + headline.getDescription()) );
 									System.out.println("");
 
 									messageCount++;
 								}
-
-
-								
-
 							}
-
+							
 						} catch(SSLException e){
 							System.out.println("RSS over https connection not supported!");
 						}
@@ -190,13 +184,15 @@ public class App
 		}
 	}
 
-	private static List<String> extractKeywords(String message){
-		return null;
+	private static Map<String, ArrayList<Integer>> extractKeywords(String message){
+
+		TermDocument termDocument = new TermDocument();
+		termDocument = termExtractor.extractTerms( message );
+		Map<String, ArrayList<Integer>> result = termDocument.getFinalFilteredTerms();
+
+		return result;
 	}
 }
-
-
-
 
 
 
