@@ -33,7 +33,7 @@ public class App
 {
 
 	public enum STATE {
-		IDLE, FETCHING, LIVE
+		IDLE, KEYWORDS, LIVE
 	}
 
 	private static STATE state;
@@ -60,6 +60,8 @@ public class App
 			while ( System.currentTimeMillis() < TIMEOUT && !done ) {
 
 				switch (state){
+
+					// ------------ Idle State ------------
 					case IDLE:
 						ControlMessage message = new ControlMessage(checkInput(true));
 
@@ -67,14 +69,16 @@ public class App
 						if( message.getCommand().equals("start") ){
 
 							groupsList = message.getGroups();
-							state = STATE.FETCHING;
+							state = STATE.KEYWORDS;
 							groupIndex = 0;
 							feedIndex = 0;
-							System.out.println("Start command received, fetching RSS...");
+							System.out.println("Start command received, Fetching RSS...");
 						}
 
 						break;
-					case FETCHING:
+
+					// ----- Keyword Extraction State -----
+					case KEYWORDS:
 
 						input = checkInput(false);
 
@@ -82,6 +86,7 @@ public class App
 						feedUrl = groupsList.get(groupIndex).getFeeds().get(feedIndex);
 						System.out.println("Fetching RSS and extracting keywords from: "+ feedUrl);
 						try{
+
 							// RSS fetching
 							RSSFeedParser parser = new RSSFeedParser(feedUrl);
 							Feed feed = parser.readFeed();
@@ -99,12 +104,10 @@ public class App
 
 							}
 
-
-
 						} catch(SSLException e){
 							System.out.println("RSS over https connection not supported!");
 						} catch(URISyntaxException e){
-							System.out.println("RSS over https connection not supported!");
+							System.out.println("Something went wrong during keyword extraction!");
 						}
 
 						// Move on to the next feed/group
@@ -116,10 +119,12 @@ public class App
 							groupIndex++;
 							feedIndex = 0;
 						} else {
-							// fetching done
+							// Keyword extraction done
 							state = STATE.LIVE;
 						}						
 						break;
+
+					// ------- Live Streaming State -------
 					case LIVE:
 						done = true;
 						break;
@@ -159,40 +164,6 @@ public class App
 		return null;
 	}
 }
-
-
-		
-		// BufferedReader br = null;
-
-
-		// br = new BufferedReader(new InputStreamReader(System.in));
-
-		// while (true) {
-
-		// 	System.out.print("Enter something : ");
-		// 	String input = br.readLine();
-
-		// 	if ("q".equals(input)) {
-		// 		System.out.println("Exit!");
-		// 		System.exit(0);
-		// 	}
-
-		// 	System.out.println("input : " + input);
-		// 	System.out.println("-----------\n");
-		// }
-
-
-		// System.out.println("Started");
-
-		// for (int i=0; i<5 ; i++ ) {
-
-  //		   System.out.println("Running");
-  //		   System.out.println(i);
-		// 	Thread.sleep(1000);			
-		// }
-
-
-
 
 
 

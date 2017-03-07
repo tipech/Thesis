@@ -303,26 +303,10 @@ $( document ).ready( function() {
 
 	function getSettings() {
 
-		var newSettings = { "dateType": "", "date": "", "dataRate": 0, "rssRate": 0 };
+		var newSettings = { "time": "", "dataRate": 0, "rssRate": 0 };
 
 
-		newSettings.dateType = $( "input[name=dateType]:checked" ).val();
-
-		if ( newSettings.dateType == "historical" ) {
-
-			var date = $( ".settings input[name=date]" ).val();
-			var dateReg = /^\d{4}([/-])\d{2}\1\d{2}$/;
-
-			if ( date.match( dateReg ) ) {
-
-				newSettings.date = date.replace( "/", "-" );
-
-			} else {
-
-				flashError( $( "input[name=date]" ) );
-				return false;
-			}
-		}
+		newSettings.time = $( ".time :selected" ).val();
 
 		var dataRate = $( "#dataRate" ).val();
 
@@ -362,8 +346,7 @@ $( document ).ready( function() {
 		var group2 = addGroup( "Fox News", "#fff45b" );
 		addFeed( group2, "http://feeds.foxnews.com/foxnews/latest?format=xml" );
 
-		$( "#dateTypeHistorical" ).click();
-		$( ".settings input[name=date]" ).val( "2017-03-02" );
+		$( ".time option[value='today']").prop('selected', true);
 
 		$( "#dataRate" ).val( "1" );
 		$( "#rssRate" ).val( "600" );
@@ -402,23 +385,8 @@ $( document ).ready( function() {
 	$( ".preset._1" ).click( applyPreset1 );
 	$( ".preset._2" ).click( function() {
 
-		console.log( $( "input[type='date']" ).val() ); // DEBUG ONLY
+		console.log( $( ".time :selected" ).val() ); // DEBUG ONLY
 	} );
-
-	// Options
-	$( ".option input[type='date']" ).click( function() {
-
-		$( "#dateTypeHistorical" ).click();
-	} );
-	$( "#dateTypeLive" ).click( function() {
-
-		$( ".option input[type='date']" ).css( { "background-color": "#EEE" } );
-	} );
-	$( "#dateTypeHistorical" ).click( function() {
-
-		$( ".option input[type='date']" ).css( { "background-color": "white" } );
-	} );
-
 
 
 	// =========== Control Functions ============

@@ -47,10 +47,6 @@ def start():
 
 	dataJson = request.body.read()
 
-	# data = json.loads( dataJson )
-	# if( data['settings']['dateType'] == "historical" ):
-		# status['state'] = "batch"
-
 	global process
 
 	process.stdin.write('{ "command": "start", "data": ' + dataJson + "}\n")

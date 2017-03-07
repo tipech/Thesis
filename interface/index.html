@@ -49,17 +49,12 @@
 				<span class="title">Settings</span>
 				<ul class="options">
 					<li class="option">
-						<span class="label">Date:</span>
-						<div class="wrapper">
-							<span>
-								<input id="dateTypeHistorical" type="radio" name="dateType" value="historical" checked="checked">
-								<input type="date" name="date" placeholder=" yyyy-mm-dd">
-							</span>
-							<span>
-								<input id="dateTypeLive" type="radio" name="dateType" value="live">
-								<label for="dateTypeLive">Today (real-time)</label>
-							</span>						
-						</div>					
+						<span class="label">Items from:</span>
+						<select class="time">
+							<option value="today">Today</option>
+							<option value="2days">Last two days</option>
+							<option value="week">Last week</option>
+						</select>					
 					</li>
 					<li class="option">
 						<span class="label">Refresh rate (s):</span>
