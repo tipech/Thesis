@@ -303,10 +303,10 @@ $( document ).ready( function() {
 
 	function getSettings() {
 
-		var newSettings = { "time": "", "dataRate": 0, "rssRate": 0 };
+		var newSettings = { "date": "", "dataRate": 0, "rssRate": 0 };
 
 
-		newSettings.time = $( ".time :selected" ).val();
+		newSettings.date = $( ".date :selected" ).val();
 
 		var dataRate = $( "#dataRate" ).val();
 
@@ -346,7 +346,7 @@ $( document ).ready( function() {
 		var group2 = addGroup( "Fox News", "#fff45b" );
 		addFeed( group2, "http://feeds.foxnews.com/foxnews/latest?format=xml" );
 
-		$( ".time option[value='today']").prop('selected', true);
+		$( ".date option[value='today']").prop('selected', true);
 
 		$( "#dataRate" ).val( "1" );
 		$( "#rssRate" ).val( "600" );
@@ -385,7 +385,7 @@ $( document ).ready( function() {
 	$( ".preset._1" ).click( applyPreset1 );
 	$( ".preset._2" ).click( function() {
 
-		console.log( $( ".time :selected" ).val() ); // DEBUG ONLY
+		console.log( $( ".date :selected" ).val() ); // DEBUG ONLY
 	} );
 
 

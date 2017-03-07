@@ -67,7 +67,7 @@ public class RSSFeedParser {
 					case ITEM:
 						if (isFeedHeader) {
 							isFeedHeader = false;
-							feed = new Feed(this.url.toString(), title, link, description, language,	copyright, pubdate);
+							feed = new Feed(this.url.toString(), title, link, description, language, copyright);
 						}
 						event = eventReader.nextEvent();
 						break;
@@ -104,6 +104,7 @@ public class RSSFeedParser {
 						message.setGuid(guid);
 						message.setLink(link);
 						message.setTitle(title);
+						message.setPubDate(pubdate);
 						feed.getEntries().add(message);
 						event = eventReader.nextEvent();
 						continue;

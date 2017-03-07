@@ -12,8 +12,8 @@
 
     <packaging>pom</packaging>
     <modules>
-        <module>lib/commons-util</module>
-        <module>lib/rake4j</module>
+        <module>lib/StringHelpers</module>
+        <module>lib/jtopia</module>
         <module>core</module>
     </modules>
 

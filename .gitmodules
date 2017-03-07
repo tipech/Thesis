@@ -1,0 +1,6 @@
+[submodule "lib/jtopia"]
+	path = lib/jtopia
+	url = https://github.com/tipech/jtopia.git
+[submodule "lib/StringHelpers"]
+	path = lib/StringHelpers
+	url = https://github.com/srijiths/StringHelpers.git

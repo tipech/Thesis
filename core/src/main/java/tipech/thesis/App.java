@@ -1,22 +1,25 @@
 package tipech.thesis;
 
+import java.util.List;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import java.util.List;
-import java.util.ArrayList;
-
 import java.util.stream.Collectors;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.IllegalStateException;
 import javax.net.ssl.SSLException;
-import java.net.URISyntaxException;
+// import java.net.URISyntaxException;
 
-import rake4j.core.model.Document;
-import rake4j.core.RakeAnalyzer;
+import com.sree.textbytes.jtopia.Configuration;
+import com.sree.textbytes.jtopia.TermsExtractor;
+import com.sree.textbytes.jtopia.TermDocument;
 
 import tipech.thesis.extraction.ControlMessage;
 import tipech.thesis.extraction.Group;
@@ -53,8 +56,24 @@ public class App
 			List<Group> groupsList = new ArrayList<Group>();
 			int groupIndex = 0;
 			int feedIndex = 0;
+			int messageCount = 0;
 			String input;
 			String feedUrl;
+
+			LocalDate rejectDate = null;
+        	DateTimeFormatter rssDateFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz");
+
+			// ----- Keyword extraction configuration -----
+			// Options:
+			// "default":  "lib/jtopia/model/default/english-lexicon.txt"
+			// "openNLP":  "lib/jtopia/model/openNLP/en-pos-maxent.bin"
+			// "stanford": "lib/jtopia/model/stanford/english-left3words-distsim.tagger"
+			Configuration.setTaggerType("stanford");
+			Configuration.setModelFileLocation("lib/jtopia/model/stanford/english-left3words-distsim.tagger");
+			Configuration.setSingleStrength(1);
+			Configuration.setNoLimitStrength(1);
+			TermsExtractor termExtractor = new TermsExtractor();
+			TermDocument termDocument = new TermDocument();
 
 			// ============ Main Loop ===========
 			while ( System.currentTimeMillis() < TIMEOUT && !done ) {
@@ -69,6 +88,8 @@ public class App
 						if( message.getCommand().equals("start") ){
 
 							groupsList = message.getGroups();
+							rejectDate = message.getRejectDate();
+
 							state = STATE.KEYWORDS;
 							groupIndex = 0;
 							feedIndex = 0;
@@ -90,24 +111,34 @@ public class App
 							// RSS fetching
 							RSSFeedParser parser = new RSSFeedParser(feedUrl);
 							Feed feed = parser.readFeed();
-
-							// Keyword extraction
 							for (FeedMessage headline : feed.getEntries()) {
 
-								System.out.println(headline);
 
-								Document doc = new Document(headline.getTitle());
-								RakeAnalyzer rake = new RakeAnalyzer();
-								rake.loadDocument(doc);
-								rake.run();
-								System.out.println(doc.termMapToString());
+								// Data filtering
+								if( LocalDate.parse(headline.getPubDate(), rssDateFormat).isAfter(rejectDate) ){
+								
+
+
+
+
+									// Keyword extraction
+									termDocument = termExtractor.extractTerms(headline.getTitle());
+									System.out.println(headline.getTitle());
+									System.out.println(termDocument.getFinalFilteredTerms());
+									System.out.println("");
+
+									messageCount++;
+								}
+
+
+								
 
 							}
 
 						} catch(SSLException e){
 							System.out.println("RSS over https connection not supported!");
-						} catch(URISyntaxException e){
-							System.out.println("Something went wrong during keyword extraction!");
+						// } catch(URISyntaxException e){
+						// 	System.out.println("Something went wrong during keyword extraction!");
 						}
 
 						// Move on to the next feed/group
@@ -120,6 +151,7 @@ public class App
 							feedIndex = 0;
 						} else {
 							// Keyword extraction done
+							System.out.println(messageCount);
 							state = STATE.LIVE;
 						}						
 						break;
