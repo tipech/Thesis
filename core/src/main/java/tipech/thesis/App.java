@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import java.util.stream.Collectors;
 
@@ -21,9 +22,9 @@ import com.sree.textbytes.jtopia.TermsExtractor;
 import com.sree.textbytes.jtopia.TermDocument;
 
 import tipech.thesis.extraction.ControlMessage;
-import tipech.thesis.extraction.Group;
+import tipech.thesis.extraction.FeedGroup;
 import tipech.thesis.extraction.Feed;
-import tipech.thesis.extraction.FeedMessage;
+import tipech.thesis.extraction.FeedItem;
 import tipech.thesis.extraction.RSSFeedParser;
 
 
@@ -41,7 +42,7 @@ public class App
 	private static STATE state;
 
 	private static BufferedReader bufferedReader;
-	private static TermsExtractor termExtractor = new TermsExtractor();
+	private static TermsExtractor termExtractor;
 
 
 	public static void main( String[] args )
@@ -66,12 +67,14 @@ public class App
 			// --------- Internal Loop variables ----------
 			boolean done = false;
 			String input;
+
 			bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+			termExtractor = new TermsExtractor();
 
 			DateTimeFormatter rssDateFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz");
 			LocalDate rejectDate = null;
 			
-			List<Group> groupsList = new ArrayList<Group>();
+			List<FeedGroup> groupsList = new ArrayList<FeedGroup>();
 			int groupIndex = 0;
 			int feedIndex = 0;
 			int messageCount = 0;
@@ -114,16 +117,15 @@ public class App
 							// RSS fetching
 							RSSFeedParser parser = new RSSFeedParser(feedUrl);
 							Feed feed = parser.readFeed();
-							for (FeedMessage headline : feed.getEntries()) {
+							for (FeedItem headline : feed.getEntries()) {
 
 								// Data filtering by date
 								if( LocalDate.parse(headline.getPubDate(), rssDateFormat).isAfter(rejectDate) ){
 								
+									System.out.println( "\n" + headline.getTitle() + "\n" + headline.getDescription() );
+
 									// Keyword extraction
-									System.out.println(headline.getTitle());
-									System.out.println(headline.getDescription());
-									System.out.println( extractKeywords(headline.getTitle() + " " + headline.getDescription()) );
-									System.out.println("");
+									extractKeywords( headline.getTitle() + "\n" + headline.getDescription() );
 
 									messageCount++;
 								}
@@ -186,35 +188,72 @@ public class App
 
 	private static Map<String, ArrayList<Integer>> extractKeywords(String message){
 
+		// Get terms
 		TermDocument termDocument = new TermDocument();
 		termDocument = termExtractor.extractTerms( message );
-		Map<String, ArrayList<Integer>> result = termDocument.getFinalFilteredTerms();
+		Map<String, ArrayList<Integer>> keywords = termDocument.getFinalFilteredTerms();
+		Map<String, ArrayList<Integer>> filteredKeywords = null;
 
-		return result;
+		System.out.println( keywords );
+
+		// Split key phrases with more than three words
+		filteredKeywords = keywords.entrySet().stream()
+			.flatMap(keyword -> {
+
+				if( keyword.getValue().get(1) < 3){
+					return Stream.of(keyword);
+
+				} else {
+
+					Map<String, ArrayList<Integer>> splitWords = new HashMap<String, ArrayList<Integer>>();
+					String[] words = keyword.getKey().split(" ");
+					String newWord = "";
+					int wordCount = 0;
+
+					// Loop through single words of key phrase
+					for (int i=0; i < words.length; i++) {
+						
+						if(wordCount < 2){
+							// Still a single key phrase
+							newWord += " " + words[i];
+							wordCount++;
+						
+						} else {
+							// Too many words, store previous key phrase...
+							ArrayList<Integer> values = new ArrayList<Integer>();
+							values.add(keyword.getValue().get(0)); // count in text, same as parent
+							values.add(2); // word count / strength: 2
+							splitWords.put(newWord, values);
+
+							// ... and start a new one
+							newWord = words[i];
+							wordCount = 1;
+						}
+					}
+
+					// if a last word remains, add it
+					if(wordCount > 0){
+						ArrayList<Integer> values = new ArrayList<Integer>();
+						values.add(keyword.getValue().get(0)); // count in text, same as parent
+						values.add(1); // word count / strength: 1
+						splitWords.put(newWord, values);						
+					}
+
+
+
+					return splitWords.entrySet().stream();
+				}
+			})
+			.collect(Collectors.toMap(
+				keyword -> keyword.getKey(), 
+				keyword -> keyword.getValue(),  
+				(word1, word2) -> { // if split resulted in same words, add counts
+					word1.set(0, word1.get(0) + word2.get(0));
+					return word1;
+				}));
+
+		System.out.println( filteredKeywords );
+
+		return filteredKeywords;
 	}
 }
-
-
-
-		// Map<Integer, String> HOSTING = new HashMap<>();
-		// HOSTING.put(1, "linode.com");
-		// HOSTING.put(2, "heroku.com");
-		// HOSTING.put(3, "digitalocean.com");
-		// HOSTING.put(4, "aws.amazon.com");
-
-		// String result = "";
-		// for (Map.Entry<Integer, String> entry : HOSTING.entrySet()) {
-		//	  if ("aws.amazon.com".equals(entry.getValue())) {
-		//		  result = entry.getValue();
-		//	  }
-		// }
-		// System.out.println("Before Java 8 : " + result);
-
-		// //Map -> Stream -> Filter -> String
-		// result = HOSTING.entrySet().stream()
-		//		  .filter(map -> "aws.amazon.com".equals(map.getValue()))
-		//		  .map(map -> map.getValue())
-		//		  .collect(Collectors.joining());
-
-		// System.out.println("With Java 8 : " + result);
-

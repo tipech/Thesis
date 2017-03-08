@@ -21,7 +21,7 @@ public class ControlMessage {
 	// final String dataRate;
 	// final String rssRate;
 
-	final List<Group> groups = new ArrayList<Group>();
+	final List<FeedGroup> groups = new ArrayList<FeedGroup>();
 
 	public ControlMessage(String json) {
 
@@ -37,7 +37,7 @@ public class ControlMessage {
 		
 		for(final JsonElement groupJson : groupsJson) {
 
-			Group group = gson.fromJson(groupJson.toString(), Group.class);
+			FeedGroup group = gson.fromJson(groupJson.toString(), FeedGroup.class);
 			groups.add(group);
 		}
 
@@ -57,7 +57,7 @@ public class ControlMessage {
 		}
 	}
 
-	public List<Group> getGroups() {
+	public List<FeedGroup> getGroups() {
 		return groups;
 	}
 

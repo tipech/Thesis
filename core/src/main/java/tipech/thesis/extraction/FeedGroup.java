@@ -6,14 +6,14 @@ import java.util.List;
 /*
  * Stores a group of RSS feeds
  */
-public class Group {
+public class FeedGroup {
 
 	final String name;
 	final String color;
 
 	final List<String> feeds = new ArrayList<String>();
 
-	public Group(String name, String color) {
+	public FeedGroup(String name, String color) {
 		this.name = name;
 		this.color = color;
 	}
@@ -32,7 +32,7 @@ public class Group {
 
 	@Override
 	public String toString() {
-		return "Group: " + name + " [color=" + color + "]";
+		return "Feed group: " + name + " [color=" + color + "]";
 	}
 
 }

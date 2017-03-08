@@ -13,7 +13,7 @@ import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 
 import tipech.thesis.extraction.Feed;
-import tipech.thesis.extraction.FeedMessage;
+import tipech.thesis.extraction.FeedItem;
 
 public class RSSFeedParser {
 	static final String TITLE = "title";
@@ -98,7 +98,7 @@ public class RSSFeedParser {
 					}
 				} else if (event.isEndElement()) {
 					if (event.asEndElement().getName().getLocalPart() == (ITEM)) {
-						FeedMessage message = new FeedMessage();
+						FeedItem message = new FeedItem();
 						message.setAuthor(author);
 						message.setDescription(description);
 						message.setGuid(guid);

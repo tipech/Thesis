@@ -4,7 +4,7 @@ package tipech.thesis.extraction;
 /*
  * Represents one RSS message
  */
-public class FeedMessage {
+public class FeedItem {
 
 	String title;
 	String description;
@@ -63,7 +63,7 @@ public class FeedMessage {
 
 	@Override
 	public String toString() {
-		return "FeedMessage [title=" + title + ", description=" + description
+		return "FeedItem [title=" + title + ", description=" + description
 		+ ", date=" + pubDate + ", link=" + link + ", author=" + author + ", guid=" + guid
 		+ "]";
 	}
