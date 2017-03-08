@@ -1,4 +1,4 @@
-package tipech.thesis.extraction;
+package tipech.thesis.entities;
 
 
 /*

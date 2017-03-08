@@ -12,10 +12,16 @@ import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.events.Characters;
 import javax.xml.stream.events.XMLEvent;
 
-import tipech.thesis.extraction.Feed;
-import tipech.thesis.extraction.FeedItem;
+import tipech.thesis.entities.Feed;
+import tipech.thesis.entities.FeedItem;
 
+
+/**
+ * Parses a single RSS feed and returns a Feed Object containing FeedItem objects
+ *
+ */
 public class RSSFeedParser {
+	
 	static final String TITLE = "title";
 	static final String DESCRIPTION = "description";
 	static final String CHANNEL = "channel";
