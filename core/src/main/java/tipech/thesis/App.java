@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ import tipech.thesis.entities.ControlMessage;
 import tipech.thesis.entities.FeedGroup;
 import tipech.thesis.entities.Feed;
 import tipech.thesis.entities.FeedItem;
+import tipech.thesis.entities.NewsItem;
 
 import tipech.thesis.extraction.RSSFeedParser;
 import tipech.thesis.extraction.KeywordExtractor;
@@ -64,11 +66,14 @@ public class App
 			// --------- Internal Loop variables ----------
 			boolean done = false;
 			
+			final List<NewsItem> newsList = new ArrayList<NewsItem>();
+			List<Feed> feedsList = new ArrayList<Feed>();
 			List<FeedGroup> groupsList = new ArrayList<FeedGroup>();
 			int groupIndex = 0;
 			int feedIndex = 0;
 			int messageCount = 0;
 			String feedUrl;
+
 
 
 			// ============ Main Loop ===========
@@ -84,12 +89,16 @@ public class App
 						if( message.getCommand().equals("start") ){
 
 							groupsList = message.getGroups();
+							feedsList.clear();
+							newsList.clear();
 							rejectDate = message.getRejectDate();
 
-							state = STATE.KEYWORDS;
 							groupIndex = 0;
 							feedIndex = 0;
-							System.out.println("Start command received, Fetching RSS...");
+
+
+							System.out.println("Start command received, starting...");
+							state = STATE.KEYWORDS;
 						}
 
 						break;
@@ -98,6 +107,8 @@ public class App
 					case KEYWORDS:
 
 						checkInput(false);
+
+						// Get final copies of variables for reading inside the streams
 						final LocalDate filterDate = rejectDate;
 
 						// Fetch a single feed from a single group
@@ -108,9 +119,10 @@ public class App
 							// RSS fetching
 							RSSFeedParser parser = new RSSFeedParser(feedUrl);
 							Feed feed = parser.readFeed();
+							feedsList.add(feed);
 							List<FeedItem> feedItems = feed.getEntries();
 
-							feedItems.stream()
+							List<NewsItem> newNewsItems = feedItems.stream()
 								// Filter out too old
 								.filter( headline ->
 									LocalDate.parse(headline.getPubDate(), rssDateFormat).isAfter(filterDate)
@@ -123,15 +135,41 @@ public class App
 								)
 								// Filter out too small
 								.filter( keywordSet ->
+									// Aggregate counts and compare sum
 									keywordSet.stream()
 										.reduce(
 											0,
-											(sum, word) -> sum + word.getValue().get(1),
+											(sum, word) -> sum + word.getValue(),
 											(sum1, sum2) -> sum1 + sum2
 										) > 2
 								)
-								.forEach( keywordSet -> System.out.println( keywordSet ) );
+								// Turn remaining sets into news items
+								.map( keywordSet ->
+									new NewsItem( 
+										keywordSet.stream().collect(Collectors.toMap(Entry::getKey, Entry::getValue)),
+										feed
+									)
+								)
+								// Compare with news from previous feeds and merge if necessary
+								.filter( newsItem -> 
 
+									newsList.stream()
+										// Look through older news items
+										.filter( oldNewsItem -> {
+											if(newsItem.equals(oldNewsItem)){
+												// merge with old NewsItem
+												// TODO
+												return true; // discard new newsItem
+											} else {
+												return false;
+											}
+										} )
+										// Stream should only contain stuff if there were common items
+										.count() == 0 // allow only unique news
+								)
+								.collect(Collectors.toList());
+
+							newsList.addAll( newNewsItems );
 							
 						} catch(SSLException e){
 							System.out.println("RSS over https connection not supported!");
@@ -154,6 +192,7 @@ public class App
 
 					// ------- Live Streaming State -------
 					case LIVE:
+						System.out.println(newsList);
 						done = true;
 						break;
 				}

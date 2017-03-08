@@ -8,6 +8,9 @@ import java.util.List;
  */
 public class Feed {
 
+	private static int nextId = 0;
+
+	final int id;
 	final String url;
 	final String title;
 	final String link;
@@ -25,6 +28,8 @@ public class Feed {
 		this.description = description;
 		this.language = language;
 		this.copyright = copyright;
+		this.id = nextId;
+		nextId++;
 	}
 
 	public List<FeedItem> getEntries() {
