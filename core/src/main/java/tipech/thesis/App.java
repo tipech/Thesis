@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Comparator;
 
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
@@ -37,7 +38,7 @@ public class App
 {
 
 	public enum STATE {
-		IDLE, KEYWORDS, LIVE
+		IDLE, KEYWORDS, SETUP, LIVE
 	}
 
 	private static STATE state;
@@ -51,6 +52,8 @@ public class App
 
 			// ---------- General configuration -----------
 			long TIMEOUT = System.currentTimeMillis()+ 20*1000;
+			int TWITTER_TERMS_COUNT = 390;
+
 			state = STATE.IDLE;
 
 
@@ -158,7 +161,7 @@ public class App
 										.filter( oldNewsItem -> {
 											if(newsItem.equals(oldNewsItem)){
 												// merge with old NewsItem
-												// TODO
+												oldNewsItem.addFeed(feed);
 												return true; // discard new newsItem
 											} else {
 												return false;
@@ -185,14 +188,43 @@ public class App
 							feedIndex = 0;
 						} else {
 							// Keyword extraction done
-							// System.out.println(messageCount);
-							state = STATE.LIVE;
+							state = STATE.SETUP;
 						}						
+						break;
+
+					// -------  Stream Setup State --------
+					case SETUP:
+						// System.out.println(newsList);
+
+						// Aggregate the keyword list
+						Map<String, Integer> aggregatedTerms = newsList.stream()
+							.flatMap( newsItem -> newsItem.getTerms().entrySet().stream() )
+							.collect(Collectors.toMap(
+								Entry::getKey, 
+								Entry::getValue,  
+								(count1, count2) -> count1 + count2 // if same words, add counts
+							));
+
+						// Filter too small, sort and take the top terms
+						List<String> finalKeywords = aggregatedTerms.entrySet().stream()
+        					.filter(term -> term.getKey().length() > 3 )
+        					.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+        					.limit(TWITTER_TERMS_COUNT)
+        					.map(Map.Entry::getKey)
+        					.map(String::toLowerCase)
+        					.peek(word->System.out.println(word))
+        					.collect(Collectors.toList());
+
+        				System.out.println(finalKeywords);
+
+
+						
+
+						state = STATE.LIVE;
 						break;
 
 					// ------- Live Streaming State -------
 					case LIVE:
-						System.out.println(newsList);
 						done = true;
 						break;
 				}

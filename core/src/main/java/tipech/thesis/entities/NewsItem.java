@@ -6,17 +6,19 @@ import java.util.Map;
 
 import java.util.stream.Collectors;
 
+import tipech.thesis.extraction.JaccardComparator;
+
 /*
  * Represents one News Item
  */
 public class NewsItem {
 
-	private Map<String, Integer> keywords;
+	private Map<String, Integer> terms;
 	private List<Feed> feeds;
 
-	public NewsItem(Map<String, Integer> keywords, Feed feed) {
+	public NewsItem(Map<String, Integer> terms, Feed feed) {
 
-		this.keywords = keywords;
+		this.terms = terms;
 		feeds = new ArrayList<Feed>();
 		feeds.add(feed);
 	}
@@ -26,14 +28,39 @@ public class NewsItem {
 		feeds.add(feed);
 	}
 
+	public Map<String, Integer> getTerms(){
+
+		return terms;
+	}
+
+	public List<String> getKeywords(){
+
+		return new ArrayList<String>(terms.keySet());
+	}
+
+
 	@Override
-	public boolean equals(Object other){
-		return false; // TODO implement news items comparison
+	public boolean equals(Object otherObject){
+
+		NewsItem other = (NewsItem) otherObject;
+
+		JaccardComparator comparator = new JaccardComparator();
+
+		return comparator.similarity(this.getKeywords(), other.getKeywords()) > threshold;
 	}
 
 	@Override
 	public String toString() {
-		return "NewsItem [keywords=" + keywords + ", feeds=" + feeds.stream().map(f -> f.getUrl()).collect(Collectors.toList()) + "]\n";
+		return "\n\nNewsItem [terms=" + terms + ", feeds=" + 
+			feeds.stream().map(f -> f.getUrl()).collect(Collectors.toList()) + "]";
+	}
+
+	// Static Members
+	private static double threshold = 0.3;
+
+	public static void setThreshold(double value){
+
+		threshold = value;
 	}
 
 }
