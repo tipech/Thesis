@@ -6,6 +6,8 @@ import java.util.Map;
 
 import java.util.stream.Collectors;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import tipech.thesis.extraction.JaccardComparator;
 
 /*
@@ -13,11 +15,13 @@ import tipech.thesis.extraction.JaccardComparator;
  */
 public class NewsItem {
 
+	int id;
 	private Map<String, Integer> terms;
 	private List<Feed> feeds;
 
 	public NewsItem(Map<String, Integer> terms, Feed feed) {
 
+		this.id = uniqueId.getAndIncrement();
 		this.terms = terms;
 		feeds = new ArrayList<Feed>();
 		feeds.add(feed);
@@ -28,6 +32,14 @@ public class NewsItem {
 		feeds.add(feed);
 	}
 
+	public List<Feed> getFeeds(){
+		return feeds;
+	}
+
+	public int getId() {
+		return id;
+	}
+
 	public Map<String, Integer> getTerms(){
 
 		return terms;
@@ -36,6 +48,11 @@ public class NewsItem {
 	public List<String> getKeywords(){
 
 		return new ArrayList<String>(terms.keySet());
+	}
+
+	public String getKeywordString(){
+
+		return String.join( " ", this.getKeywords() );
 	}
 
 
@@ -56,6 +73,8 @@ public class NewsItem {
 	}
 
 	// Static Members
+	private static AtomicInteger uniqueId = new AtomicInteger();
+
 	private static double threshold = 0.3;
 
 	public static void setThreshold(double value){

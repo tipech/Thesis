@@ -227,8 +227,8 @@ public class App
 						// Store the feeds
 						dbManager.saveFeeds( feedsList );
 
-
 						// Store the news items
+						dbManager.saveNews( newsList );
 						
 						// Show time
 						state = STATE.LIVE;

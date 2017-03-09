@@ -1,6 +1,11 @@
 package tipech.thesis.extraction;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -10,6 +15,7 @@ import java.sql.SQLException;
 
 import tipech.thesis.entities.FeedGroup;
 import tipech.thesis.entities.Feed;
+import tipech.thesis.entities.NewsItem;
 
 
 /*
@@ -102,5 +108,82 @@ public class DatabaseManager {
 		}
 		insert.executeBatch();
 		insert.close();
+	}
+
+	public void saveNews(List<NewsItem> newsList) throws SQLException {
+
+		// drop table if exists
+		Statement dropNewsItems = connection.createStatement();
+		String dropNewsItemsSql = "DROP TABLE IF EXISTS news";
+
+		dropNewsItems.executeUpdate(dropNewsItemsSql);
+		dropNewsItems.close();
+
+		// create a new table to hold news items
+		Statement createNewsItems = connection.createStatement();
+		String createNewsItemsSql = "CREATE TABLE news " +
+			"(id 		INT PRIMARY KEY NOT NULL," +
+			" keywords 	TEXT 			NOT NULL)";
+
+		createNewsItems.executeUpdate(createNewsItemsSql);
+		createNewsItems.close();
+
+
+		// drop table if exists
+		Statement dropNewsGroups = connection.createStatement();
+		String dropNewsGroupsSql = "DROP TABLE IF EXISTS newsGroups";
+
+		dropNewsGroups.executeUpdate(dropNewsGroupsSql);
+		dropNewsGroups.close();
+
+		// create a new table to hold news-group relations
+		Statement createNewsGroups = connection.createStatement();
+		String createNewsGroupsSql = "CREATE TABLE newsGroups " +
+			"(id 			INT PRIMARY KEY NOT NULL," +
+			" newsItemId 	INT 			NOT NULL," +
+			" groupId 		INT 			NOT NULL)";
+
+		createNewsGroups.executeUpdate(createNewsGroupsSql);
+		createNewsGroups.close();
+
+
+		// insert news items in a batch query
+		PreparedStatement insertNewsItems = connection.prepareStatement(
+				"INSERT INTO news ('id','keywords') VALUES(?, ?)"
+			);
+
+		// insert news-group relations in a batch query
+		PreparedStatement insertNewsGroups = connection.prepareStatement(
+				"INSERT INTO newsGroups ('id','newsItemId','groupId') VALUES(?, ?, ?)"
+			);
+
+		for (NewsItem item : newsList) {
+			
+			insertNewsItems.setInt(1, item.getId());
+			insertNewsItems.setString(2, item.getKeywordString());
+			insertNewsItems.addBatch();
+
+			// get all the feedGroups for this news Item in [name=id] form
+			Map<String,Integer> groupIds = item.getFeeds().stream()
+				.flatMap( feed -> Stream.of( feed.getGroup() ) )
+				// discard feeds from same group
+				.collect( Collectors.toMap( FeedGroup::getName, FeedGroup::getId, (a, b) -> a ) ); 
+
+			for (Map.Entry<String, Integer> group : groupIds.entrySet() ) {
+				
+				insertNewsGroups.setInt(1, newsGroupsRelCounter);
+				insertNewsGroups.setInt(2, item.getId());
+				insertNewsGroups.setInt(3, group.getValue());
+				insertNewsGroups.addBatch();
+				newsGroupsRelCounter++;
+			}
+
+		}
+		insertNewsItems.executeBatch();
+		insertNewsItems.close();
+
+		insertNewsGroups.executeBatch();
+		insertNewsGroups.close();
+
 	}
 }
