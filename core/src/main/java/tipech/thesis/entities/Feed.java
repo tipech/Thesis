@@ -3,12 +3,14 @@ package tipech.thesis.entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /*
  * Stores an RSS feed
  */
 public class Feed {
 
-	private static int nextId = 0;
+	private static AtomicInteger uniqueId = new AtomicInteger();
 
 	final int id;
 	final String url;
@@ -17,6 +19,7 @@ public class Feed {
 	final String description;
 	final String language;
 	final String copyright;
+	FeedGroup group;
 
 	final List<FeedItem> entries = new ArrayList<FeedItem>();
 
@@ -28,8 +31,8 @@ public class Feed {
 		this.description = description;
 		this.language = language;
 		this.copyright = copyright;
-		this.id = nextId;
-		nextId++;
+		this.id = uniqueId.getAndIncrement();	
+		this.group = null;
 	}
 
 	public List<FeedItem> getEntries() {
@@ -58,6 +61,18 @@ public class Feed {
 
 	public String getCopyright() {
 		return copyright;
+	}
+
+	public int getId() {
+		return id;
+	}
+
+	public void setGroup(FeedGroup group){
+		this.group = group;
+	}
+
+	public FeedGroup getGroup() {
+		return group;
 	}
 
 	@Override

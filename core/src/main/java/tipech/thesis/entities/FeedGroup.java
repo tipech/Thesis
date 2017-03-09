@@ -3,23 +3,28 @@ package tipech.thesis.entities;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /*
  * Stores a group of RSS feeds
  */
 public class FeedGroup {
 
+	private static AtomicInteger uniqueId = new AtomicInteger();
+
+	int id;
 	final String name;
 	final String color;
 
-	final List<String> feeds = new ArrayList<String>();
+	final List<String> feedUrls = new ArrayList<String>();
 
 	public FeedGroup(String name, String color) {
 		this.name = name;
 		this.color = color;
 	}
 
-	public List<String> getFeeds() {
-		return feeds;
+	public List<String> getFeedUrls() {
+		return feedUrls;
 	}
 
 	public String getName() {
@@ -30,9 +35,17 @@ public class FeedGroup {
 		return color;
 	}
 
+	public void updateId() {
+		id = uniqueId.getAndIncrement();		
+	}
+
+	public int getId() {
+		return id;
+	}
+
 	@Override
 	public String toString() {
-		return "Feed group: " + name + " [color=" + color + "]";
+		return "Feed group: " + name + " [color=" + color + ", id=" + id + "]";
 	}
 
 }

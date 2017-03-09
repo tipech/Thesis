@@ -1,5 +1,8 @@
-### General ###
+### Logs ###
 logs/
+
+### Database ###
+data.db
 
 ### Maven ###
 target/

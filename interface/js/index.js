@@ -8,6 +8,17 @@ $( document ).ready( function() {
 	var groups = [];
 	var settings = [];
 
+	// ============ Helper Functions ============
+
+	function rgb2hex(rgb) {
+		rgb = rgb.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+
+		function hex(x) {
+			return ("0" + parseInt(x).toString(16)).slice(-2);
+		}
+		return "#" + hex(rgb[1]) + hex(rgb[2]) + hex(rgb[3]);
+	}
+
 	// ============ Visual Functions ============
 
 	function randomColor( digits ) {
@@ -258,7 +269,8 @@ $( document ).ready( function() {
 		$( ".group" ).each( function() {
 
 			var name = $( this ).find( ".name" ).text();
-			var group = { "name": name, "feeds": [] };
+			var color = rgb2hex( $( this ).css( "background-color" ) );
+			var group = { "name": name, "color": color, "feedUrls": [] };
 			var feeds = [];
 
 			// loop through rss feed urls and add them
@@ -280,7 +292,7 @@ $( document ).ready( function() {
 			// check results for empty items
 			if ( name != "" && feeds.length > 0 ) {
 
-				group.feeds = feeds;
+				group.feedUrls = feeds;
 				newGroups.push( group );
 
 			} else {

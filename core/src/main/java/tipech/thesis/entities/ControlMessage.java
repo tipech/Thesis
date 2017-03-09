@@ -38,6 +38,7 @@ public class ControlMessage {
 		for(final JsonElement groupJson : groupsJson) {
 
 			FeedGroup group = gson.fromJson(groupJson.toString(), FeedGroup.class);
+			group.updateId(); // manually set id because gson
 			groups.add(group);
 		}
 

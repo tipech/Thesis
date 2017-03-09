@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.IllegalStateException;
 import javax.net.ssl.SSLException;
+import java.sql.SQLException;
 
 
 import tipech.thesis.entities.ControlMessage;
@@ -28,6 +29,7 @@ import tipech.thesis.entities.NewsItem;
 
 import tipech.thesis.extraction.RSSFeedParser;
 import tipech.thesis.extraction.KeywordExtractor;
+import tipech.thesis.extraction.DatabaseManager;
 
 
 /**
@@ -44,21 +46,23 @@ public class App
 	private static STATE state;
 
 	private static BufferedReader bufferedReader;
+	private static DatabaseManager dbManager;
 
 
 	public static void main( String[] args )
 	{
+
+		// ---------- General configuration -----------
+		long TIMEOUT = System.currentTimeMillis()+ 20*1000;
+		int TWITTER_TERMS_COUNT = 390;
+
+		state = STATE.IDLE;
+
+
 		try {
-
-			// ---------- General configuration -----------
-			long TIMEOUT = System.currentTimeMillis()+ 20*1000;
-			int TWITTER_TERMS_COUNT = 390;
-
-			state = STATE.IDLE;
-
-
 			// ---------- Objects Initialization ----------
 			bufferedReader = new BufferedReader(new InputStreamReader(System.in));
+			dbManager = new DatabaseManager();
 
 			DateTimeFormatter rssDateFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz");
 			LocalDate rejectDate = null;
@@ -76,7 +80,6 @@ public class App
 			int feedIndex = 0;
 			int messageCount = 0;
 			String feedUrl;
-
 
 
 			// ============ Main Loop ===========
@@ -115,13 +118,14 @@ public class App
 						final LocalDate filterDate = rejectDate;
 
 						// Fetch a single feed from a single group
-						feedUrl = groupsList.get(groupIndex).getFeeds().get(feedIndex);
+						feedUrl = groupsList.get(groupIndex).getFeedUrls().get(feedIndex);
 						System.out.println("Fetching RSS and extracting keywords from: "+ feedUrl);
 						try{
 
 							// RSS fetching
 							RSSFeedParser parser = new RSSFeedParser(feedUrl);
 							Feed feed = parser.readFeed();
+							feed.setGroup(groupsList.get(groupIndex));
 							feedsList.add(feed);
 							List<FeedItem> feedItems = feed.getEntries();
 
@@ -179,7 +183,7 @@ public class App
 						}
 
 						// Move on to the next feed/group
-						if (feedIndex < groupsList.get(groupIndex).getFeeds().size()-1){
+						if (feedIndex < groupsList.get(groupIndex).getFeedUrls().size()-1){
 
 							feedIndex++;
 						} else if (groupIndex < groupsList.size()-1){
@@ -207,19 +211,26 @@ public class App
 
 						// Filter too small, sort and take the top terms
 						List<String> finalKeywords = aggregatedTerms.entrySet().stream()
-        					.filter(term -> term.getKey().length() > 3 )
-        					.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-        					.limit(TWITTER_TERMS_COUNT)
-        					.map(Map.Entry::getKey)
-        					.map(String::toLowerCase)
-        					.peek(word->System.out.println(word))
-        					.collect(Collectors.toList());
+							.filter(term -> term.getKey().length() > 3 )
+							.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
+							.limit(TWITTER_TERMS_COUNT)
+							.map(Map.Entry::getKey)
+							.map(String::toLowerCase)
+							// .peek(word->System.out.println(word))
+							.collect(Collectors.toList());
 
-        				System.out.println(finalKeywords);
+						// System.out.println(finalKeywords);
+
+						// Store the feed groups
+						dbManager.saveFeedGroups( groupsList );
+
+						// Store the feeds
+						dbManager.saveFeeds( feedsList );
 
 
+						// Store the news items
 						
-
+						// Show time
 						state = STATE.LIVE;
 						break;
 
@@ -238,12 +249,18 @@ public class App
 			e.printStackTrace();
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		} finally {
 			try {
-				if (bufferedReader != null) {
-					bufferedReader.close();
-				}
+				dbManager.close();
+				bufferedReader.close();
+
 			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (NullPointerException e) {
+				e.printStackTrace();
+			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 		}
