@@ -14,6 +14,7 @@
     <modules>
         <module>lib/StringHelpers</module>
         <module>lib/jtopia</module>
+        <module>lib/hbc</module>
         <module>core</module>
     </modules>
 

@@ -123,6 +123,7 @@ public class DatabaseManager {
 		Statement createNewsItems = connection.createStatement();
 		String createNewsItemsSql = "CREATE TABLE news " +
 			"(id 		INT PRIMARY KEY NOT NULL," +
+			" title		TEXT 			NOT NULL," +
 			" keywords 	TEXT 			NOT NULL)";
 
 		createNewsItems.executeUpdate(createNewsItemsSql);
@@ -149,7 +150,7 @@ public class DatabaseManager {
 
 		// insert news items in a batch query
 		PreparedStatement insertNewsItems = connection.prepareStatement(
-				"INSERT INTO news ('id','keywords') VALUES(?, ?)"
+				"INSERT INTO news ('id','title', 'keywords') VALUES(?, ?, ?)"
 			);
 
 		// insert news-group relations in a batch query
@@ -157,10 +158,12 @@ public class DatabaseManager {
 				"INSERT INTO newsGroups ('id','newsItemId','groupId') VALUES(?, ?, ?)"
 			);
 
+		int newsGroupsRelCounter = 0;
 		for (NewsItem item : newsList) {
 			
 			insertNewsItems.setInt(1, item.getId());
-			insertNewsItems.setString(2, item.getKeywordString());
+			insertNewsItems.setString(2, item.getTitle());
+			insertNewsItems.setString(3, item.getKeywordString());
 			insertNewsItems.addBatch();
 
 			// get all the feedGroups for this news Item in [name=id] form

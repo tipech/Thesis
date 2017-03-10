@@ -4,3 +4,6 @@
 [submodule "lib/StringHelpers"]
 	path = lib/StringHelpers
 	url = https://github.com/srijiths/StringHelpers.git
+[submodule "lib/hbc"]
+	path = lib/hbc
+	url = https://github.com/twitter/hbc.git

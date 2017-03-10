@@ -10,6 +10,9 @@ import java.util.Comparator;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
@@ -17,8 +20,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.IllegalStateException;
+import java.lang.InterruptedException;
 import javax.net.ssl.SSLException;
 import java.sql.SQLException;
+
+// import org.apache.http.HttpHost;
+import com.twitter.hbc.core.Hosts;
+import com.twitter.hbc.core.HttpHosts;
+
+import com.twitter.hbc.ClientBuilder;
+import com.twitter.hbc.core.Client;
+import com.twitter.hbc.core.Constants;
+import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
+import com.twitter.hbc.core.processor.StringDelimitedProcessor;
+import com.twitter.hbc.httpclient.auth.Authentication;
+import com.twitter.hbc.httpclient.auth.OAuth1;
 
 
 import tipech.thesis.entities.ControlMessage;
@@ -47,27 +63,52 @@ public class App
 
 	private static BufferedReader bufferedReader;
 	private static DatabaseManager dbManager;
+	private static Client hosebirdClient;
 
 
 	public static void main( String[] args )
 	{
-
-		// ---------- General configuration -----------
-		long TIMEOUT = System.currentTimeMillis()+ 20*1000;
-		int TWITTER_TERMS_COUNT = 390;
-
-		state = STATE.IDLE;
-
-
+			Hosts hosebirdHosts = new HttpHosts(Constants.STREAM_HOST);
 		try {
-			// ---------- Objects Initialization ----------
+			/* =============== General Setup =============== */
+
+			// ---- Configuration ----
+			long TIMEOUT = System.currentTimeMillis() + 20*1000; // Timeout after 20 seconds
+
+			// ---- Initialization ----
+			state = STATE.IDLE;
+			
 			bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 			dbManager = new DatabaseManager();
 
+			// long startTime = System.currentTimeMillis / 1000;
 			DateTimeFormatter rssDateFormat = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss zzz");
 			LocalDate rejectDate = null;
 
 			KeywordExtractor keywordExtractor = new KeywordExtractor();
+
+			/* ============================================= */
+
+
+			/* =============== Twitter Setup =============== */
+
+			// ---- Configuration ----
+			String consumerKey = "ZAPfZLcBhYEBCeRSAK5PqkTT7";
+			String consumerSecret = "M81KvgaicyJIaQegdgXcdKDeZrSsJz4AVrGv3yoFwuItQQPMay";
+			String token = "2591998746-Mx8ZHsXJHzIxAaD2IxYfmzYuL3pYNVnvWoHZgR5";
+			String secret = "LJDvEa0jL7QJXxql0NVrULTAniLobe2TAAlnBdXRfm1xF";
+
+			int twitterTermsCount = 399;
+
+			// ---- Initialization ----
+			BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
+			// BlockingQueue<Event> eventQueue = new LinkedBlockingQueue<Event>(1000);
+
+			Authentication hosebirdAuth = new OAuth1(consumerKey, consumerSecret, token, secret);
+
+			StatusesFilterEndpoint hosebirdEndpoint = new StatusesFilterEndpoint();
+
+			/* ============================================= */
 
 
 			// --------- Internal Loop variables ----------
@@ -81,8 +122,9 @@ public class App
 			int messageCount = 0;
 			String feedUrl;
 
+			int repetitions = 0;
 
-			// ============ Main Loop ===========
+			// ================= Main Loop ================
 			while ( System.currentTimeMillis() < TIMEOUT && !done ) {
 
 				switch (state){
@@ -134,28 +176,21 @@ public class App
 								.filter( headline ->
 									LocalDate.parse(headline.getPubDate(), rssDateFormat).isAfter(filterDate)
 								)
-								// Extract keywords
-								.map( headline ->
-									keywordExtractor
-										.extract( headline.getTitle() +"\n"+ headline.getDescription() )
-										.entrySet()
+								// Turn remaining headlines into news items
+								.map( headline -> 
+									new NewsItem(headline.getTitle() + " " + headline.getDescription(), feed) 
 								)
+								// Extract Keywords
+								.peek( newsItem -> newsItem.extractTerms(keywordExtractor))
 								// Filter out too small
-								.filter( keywordSet ->
+								.filter( newsItem ->
 									// Aggregate counts and compare sum
-									keywordSet.stream()
+									newsItem.getTerms().entrySet().stream()
 										.reduce(
 											0,
 											(sum, word) -> sum + word.getValue(),
 											(sum1, sum2) -> sum1 + sum2
 										) > 2
-								)
-								// Turn remaining sets into news items
-								.map( keywordSet ->
-									new NewsItem( 
-										keywordSet.stream().collect(Collectors.toMap(Entry::getKey, Entry::getValue)),
-										feed
-									)
 								)
 								// Compare with news from previous feeds and merge if necessary
 								.filter( newsItem -> 
@@ -174,6 +209,8 @@ public class App
 										// Stream should only contain stuff if there were common items
 										.count() == 0 // allow only unique news
 								)
+								// Set newsItem ids now that everything's filtered
+								.peek(NewsItem::setId)
 								.collect(Collectors.toList());
 
 							newsList.addAll( newNewsItems );
@@ -192,13 +229,30 @@ public class App
 							feedIndex = 0;
 						} else {
 							// Keyword extraction done
+							System.out.println("News Items extraction done, storing to database...");
 							state = STATE.SETUP;
 						}						
 						break;
 
-					// -------  Stream Setup State --------
+					// -- Database & Stream Setup State ---
 					case SETUP:
-						// System.out.println(newsList);
+
+						// -------- Database Setup --------
+
+						// // Store the feed groups
+						System.out.println("Storing feed groups");				
+						dbManager.saveFeedGroups( groupsList );
+
+						// Store the feeds
+						System.out.println("Storing feeds");	
+						dbManager.saveFeeds( feedsList );
+
+						// Store the news items
+						System.out.println("Storing news items");	
+						dbManager.saveNews( newsList );
+
+
+						// -------- Stream Setup --------
 
 						// Aggregate the keyword list
 						Map<String, Integer> aggregatedTerms = newsList.stream()
@@ -213,30 +267,49 @@ public class App
 						List<String> finalKeywords = aggregatedTerms.entrySet().stream()
 							.filter(term -> term.getKey().length() > 3 )
 							.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-							.limit(TWITTER_TERMS_COUNT)
+							.limit(twitterTermsCount)
 							.map(Map.Entry::getKey)
 							.map(String::toLowerCase)
 							// .peek(word->System.out.println(word))
 							.collect(Collectors.toList());
 
-						// System.out.println(finalKeywords);
+						hosebirdEndpoint.trackTerms(finalKeywords);
 
-						// Store the feed groups
-						dbManager.saveFeedGroups( groupsList );
+						// Final setup
+						hosebirdClient = new ClientBuilder()
+							.name("Hosebird-Client-01") 		// optional: mainly for logging
+							.hosts(hosebirdHosts)
+							.authentication(hosebirdAuth)
+							.endpoint(hosebirdEndpoint)
+							.processor(new StringDelimitedProcessor(msgQueue))
+    						// .proxy("icache.intranet.gr", 80)
+							// .eventMessageQueue(eventQueue)		// optional: to process client events
+    						.build();
 
-						// Store the feeds
-						dbManager.saveFeeds( feedsList );
 
-						// Store the news items
-						dbManager.saveNews( newsList );
-						
 						// Show time
+						hosebirdClient.connect();
+
+						System.out.println("Database storage done, starting live stream...");
 						state = STATE.LIVE;
 						break;
 
 					// ------- Live Streaming State -------
 					case LIVE:
-						done = true;
+						try{
+							System.out.print("Message: ");
+							String msg = msgQueue.take();
+							System.out.println(msg);
+
+						} catch(InterruptedException e){
+							e.printStackTrace();
+						}
+
+						System.out.println(repetitions);
+						repetitions++;
+						if(repetitions >= 30){
+							done = true;
+						}						
 						break;
 				}
 			}
@@ -253,7 +326,9 @@ public class App
 			e.printStackTrace();
 		} finally {
 			try {
+				System.out.println(hosebirdClient);
 				dbManager.close();
+				hosebirdClient.stop();
 				bufferedReader.close();
 
 			} catch (IOException e) {

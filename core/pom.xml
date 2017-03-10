@@ -55,6 +55,24 @@
   </properties>
   
   <dependencies>
+    <!-- hbc has an older slf4j version that causes an exception, shading it here -->
+    <dependency>
+       <groupId>org.slf4j</groupId>
+       <artifactId>slf4j-api</artifactId>
+       <version>1.7.5</version>
+    </dependency>
+    <dependency>
+       <groupId>org.slf4j</groupId>
+       <artifactId>slf4j-log4j12</artifactId>
+       <version>1.7.5</version>
+    </dependency>
+    <!-- Stringhelpers has an older httpclient version that causes an exception, shading it here -->
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.2.5</version>
+    </dependency>
+    
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
@@ -70,5 +88,11 @@
       <artifactId>sqlite-jdbc</artifactId>
       <version>3.16.1</version>
     </dependency>
+    <dependency>
+      <groupId>com.twitter</groupId>
+      <artifactId>hbc-core</artifactId>
+      <version>2.2.1-SNAPSHOT</version>
+    </dependency>
+
   </dependencies>
 </project>

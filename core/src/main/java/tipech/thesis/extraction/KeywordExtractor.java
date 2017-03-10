@@ -67,7 +67,7 @@ public class KeywordExtractor {
 				return splitWords.entrySet().stream();
 			})
 			.collect(Collectors.toMap(
-				Entry::getKey, 
+				word -> word.getKey().toLowerCase(), 
 				Entry::getValue,  
 				(count1, count2) -> count1 + count2 // if split resulted in same words, add counts
 			));

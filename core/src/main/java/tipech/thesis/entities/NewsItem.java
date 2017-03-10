@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import tipech.thesis.extraction.KeywordExtractor;
 import tipech.thesis.extraction.JaccardComparator;
 
 /*
@@ -16,15 +17,33 @@ import tipech.thesis.extraction.JaccardComparator;
 public class NewsItem {
 
 	int id;
-	private Map<String, Integer> terms;
+	String title;
 	private List<Feed> feeds;
+	private Map<String, Integer> terms;
 
-	public NewsItem(Map<String, Integer> terms, Feed feed) {
+	public NewsItem(String title, Feed feed){
 
-		this.id = uniqueId.getAndIncrement();
-		this.terms = terms;
+		this.title = title;
 		feeds = new ArrayList<Feed>();
 		feeds.add(feed);
+	}
+
+
+	public int getId() {
+		return id;
+	}
+
+	public void setId(){
+
+		this.id = uniqueId.getAndIncrement();
+	}
+
+	public String getTitle() {
+		return title;
+	}
+
+	public List<Feed> getFeeds(){
+		return feeds;
 	}
 
 	public void addFeed(Feed feed) {
@@ -32,12 +51,9 @@ public class NewsItem {
 		feeds.add(feed);
 	}
 
-	public List<Feed> getFeeds(){
-		return feeds;
-	}
-
-	public int getId() {
-		return id;
+	public void extractTerms(KeywordExtractor keywordExtractor){
+			
+		this.terms = keywordExtractor.extract( title );
 	}
 
 	public Map<String, Integer> getTerms(){
