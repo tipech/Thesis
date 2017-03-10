@@ -169,7 +169,7 @@ public class App
 					// -- Database & Stream Setup State ---
 					case SETUP:
 
-						// setupDatabase();
+						setupDatabase();
 						setupStream();						
 
 						System.out.println("Setup done, starting live stream...");
@@ -383,7 +383,7 @@ public class App
 		hosebirdClient.connect();
 	}
 
-	private static processSingleTweet(){
+	private static void processSingleTweet(){
 
 	}
 }

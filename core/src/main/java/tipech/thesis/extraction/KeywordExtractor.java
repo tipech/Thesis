@@ -66,6 +66,8 @@ public class KeywordExtractor {
 
 				return splitWords.entrySet().stream();
 			})
+			// Filter out too small
+			.filter( word -> word.getKey().length() < 2)
 			.collect(Collectors.toMap(
 				word -> word.getKey().toLowerCase(), 
 				Entry::getValue,  
