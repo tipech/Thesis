@@ -16,8 +16,8 @@ import tipech.thesis.extraction.JaccardComparator;
  */
 public class NewsItem {
 
-	int id;
-	String title;
+	private int id;
+	private String title;
 	private List<Feed> feeds;
 	private Map<String, Integer> terms;
 

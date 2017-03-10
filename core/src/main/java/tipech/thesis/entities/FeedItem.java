@@ -6,12 +6,12 @@ package tipech.thesis.entities;
  */
 public class FeedItem {
 
-	String title;
-	String description;
-	String link;
-	String author;
-	String guid;
-	String pubDate;
+	private String title;
+	private String description;
+	private String link;
+	private String author;
+	private String guid;
+	private String pubDate;
 
 	public String getTitle() {
 		return title;

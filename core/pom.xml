@@ -55,6 +55,7 @@
   </properties>
   
   <dependencies>
+    
     <!-- hbc has an older slf4j version that causes an exception, shading it here -->
     <dependency>
        <groupId>org.slf4j</groupId>
@@ -88,6 +89,8 @@
       <artifactId>sqlite-jdbc</artifactId>
       <version>3.16.1</version>
     </dependency>
+
+    <!-- Latest hbc repo on maven doesn't support proxy, so include 2.2.1-SNAPSHOT locally -->
     <dependency>
       <groupId>com.twitter</groupId>
       <artifactId>hbc-core</artifactId>

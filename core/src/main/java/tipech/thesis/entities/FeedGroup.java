@@ -12,11 +12,11 @@ public class FeedGroup {
 
 	private static AtomicInteger uniqueId = new AtomicInteger();
 
-	int id;
-	final String name;
-	final String color;
+	private int id;
+	private final String name;
+	private final String color;
 
-	final List<String> feedUrls = new ArrayList<String>();
+	private final List<String> feedUrls = new ArrayList<String>();
 
 	public FeedGroup(String name, String color) {
 		this.name = name;

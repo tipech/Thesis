@@ -12,16 +12,16 @@ public class Feed {
 
 	private static AtomicInteger uniqueId = new AtomicInteger();
 
-	final int id;
-	final String url;
-	final String title;
-	final String link;
-	final String description;
-	final String language;
-	final String copyright;
-	FeedGroup group;
+	private final int id;
+	private final String url;
+	private final String title;
+	private final String link;
+	private final String description;
+	private final String language;
+	private final String copyright;
+	private FeedGroup group;
 
-	final List<FeedItem> entries = new ArrayList<FeedItem>();
+	private final List<FeedItem> entries = new ArrayList<FeedItem>();
 
 	public Feed(String url, String title, String link, String description, String language,
 		String copyright) {
