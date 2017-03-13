@@ -23,10 +23,10 @@ public class ControlMessage {
 
 	final List<FeedGroup> groups = new ArrayList<FeedGroup>();
 
-	public ControlMessage(String json) {
+	public ControlMessage(String rawMessage) {
 
 		Gson gson = new Gson();
-		JsonObject message = new JsonParser().parse(json).getAsJsonObject();
+		JsonObject message = new JsonParser().parse(rawMessage).getAsJsonObject();
 		
 		this.command = message.get("command").getAsString();
 		JsonObject data = message.get("data").getAsJsonObject();

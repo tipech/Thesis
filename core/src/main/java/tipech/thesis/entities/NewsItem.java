@@ -84,7 +84,7 @@ public class NewsItem {
 
 	@Override
 	public String toString() {
-		return "\n\nNewsItem [terms=" + terms + ", feeds=" + 
+		return "\n\nNewsItem [title=" + title + ", terms=" + terms + ", feeds=" + 
 			feeds.stream().map(f -> f.getUrl()).collect(Collectors.toList()) + "]";
 	}
 

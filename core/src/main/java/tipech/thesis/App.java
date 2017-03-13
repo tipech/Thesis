@@ -1,6 +1,7 @@
 package tipech.thesis;
 
 import java.util.List;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,9 +44,11 @@ import tipech.thesis.entities.FeedGroup;
 import tipech.thesis.entities.Feed;
 import tipech.thesis.entities.FeedItem;
 import tipech.thesis.entities.NewsItem;
+import tipech.thesis.entities.Tweet;
 
 import tipech.thesis.extraction.RSSFeedParser;
 import tipech.thesis.extraction.KeywordExtractor;
+import tipech.thesis.extraction.JaccardComparator;
 import tipech.thesis.extraction.DatabaseManager;
 
 
@@ -69,6 +72,7 @@ public class App
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 	private static DatabaseManager dbManager;
 	private static KeywordExtractor keywordExtractor = new KeywordExtractor();
+	private static JaccardComparator comparator = new JaccardComparator();
 	private static Client hosebirdClient;
 
 	// ---- Data Lists and counters ----
@@ -169,8 +173,9 @@ public class App
 					// -- Database & Stream Setup State ---
 					case SETUP:
 
-						setupDatabase();
-						setupStream();						
+						// setupDatabase();
+						setupStream();
+						// System.out.println(newsList);
 
 						System.out.println("Setup done, starting live stream...");
 						state = STATE.LIVE;
@@ -179,15 +184,24 @@ public class App
 					// ------- Live Streaming State -------
 					case LIVE:
 
-						System.out.print("Message: ");
-						// String msg = msgQueue.take();
-						// System.out.println(msg);
+							String rawTweet = msgQueue.take();
 
-						// TODO MARKER
+						try {
+							final Tweet tweet = new Tweet(rawTweet);
 
-						System.out.println(repetitions);
+							newsList.stream()
+								.forEach( newsItem -> tweet.matchWith(newsItem, comparator));
+
+							// System.out.print(tweet);
+							// System.out.print(" -> " + repetitions + " \n\n");
+
+						} catch (NullPointerException e){
+							System.out.println(rawTweet);
+						}
+
+
 						repetitions++;
-						if(repetitions >= 30){
+						if(repetitions >= 300){
 							stopLoop = true;
 						}						
 						break;
@@ -202,13 +216,12 @@ public class App
 			e.printStackTrace();
 		} catch (IllegalStateException e) {
 			e.printStackTrace();
-		// } catch(InterruptedException e){
-		// 	e.printStackTrace();
+		} catch(InterruptedException e){
+			e.printStackTrace();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		} finally {
 			try {
-				System.out.println(hosebirdClient);
 				dbManager.close();
 				hosebirdClient.stop();
 				bufferedReader.close();
@@ -259,7 +272,6 @@ public class App
 		feed.setGroup(groupsList.get(groupIndex));
 		feedsList.add(feed);
 		List<FeedItem> feedItems = feed.getEntries();
-
 		List<NewsItem> newNewsItems = feedItems.stream()
 			// Filter out too old
 			.filter( headline ->
@@ -360,10 +372,10 @@ public class App
 			.limit(twitterTermsCount)
 			.map(Map.Entry::getKey)
 			.map(String::toLowerCase)
-			// .peek(word->System.out.println(word))
 			.collect(Collectors.toList());
 
 		hosebirdEndpoint.trackTerms(finalKeywords);
+		hosebirdEndpoint.languages( Arrays.asList("en", "gr") ); 
 
 		System.out.println("Setting up twitter stream...");
 
