@@ -20,9 +20,10 @@ import com.google.gson.JsonArray;
 public class ControlMessage {
 
 	final String command;
-	final LocalDate rejectDate; // reject everything before that date
-	// final String dataRate;
-	// final String rssRate;
+	final LocalDate rejectDate; 		// reject everything before that date
+	final double newsThreshold = 0.3; 	// news item cross-referencing similarity threshold
+	final double tweetThreshold = 0.1; 	// news item - tweet similarity threshold
+	final int statusRate = 10;			// how often status gets refreshed
 
 	final List<FeedGroup> groups = new ArrayList<FeedGroup>();
 
@@ -88,10 +89,21 @@ public class ControlMessage {
 		return command;
 	}
 
+	public double getNewsThreshold(){
+		return newsThreshold;
+	}
+
+	public double getTweetThreshold(){
+		return tweetThreshold;
+	}
+
+	public int getStatusRate(){
+		return statusRate;
+	}
+
 	public boolean isEmpty() {
 		return command.equals("none");
 	}
-
 
 	@Override
 	public String toString() {

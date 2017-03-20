@@ -80,15 +80,11 @@ public class NewsItem {
 		this.lastTweet = lastTweet;
 	}
 
-
-	@Override
-	public boolean equals(Object otherObject){
-
-		NewsItem other = (NewsItem) otherObject;
+	public double compare(NewsItem other){
 
 		JaccardComparator comparator = new JaccardComparator();
 
-		return comparator.similarity(this.getKeywords(), other.getKeywords()) > threshold;
+		return comparator.similarity(this.getKeywords(), other.getKeywords());
 	}
 
 	@Override
@@ -99,12 +95,4 @@ public class NewsItem {
 
 	// Static Members
 	private static AtomicInteger uniqueId = new AtomicInteger();
-
-	private static double threshold = 0.3;
-
-	public static void setThreshold(double value){
-
-		threshold = value;
-	}
-
 }

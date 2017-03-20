@@ -74,7 +74,7 @@ public class App
 	// ---- Managers ----
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 	private static DatabaseManager dbManager;
-	private static KeywordExtractor keywordExtractor = new KeywordExtractor();
+	private static KeywordExtractor keywordExtractor;
 	private static JaccardComparator comparator = new JaccardComparator();
 	private static Client hosebirdClient;
 
@@ -128,6 +128,11 @@ public class App
 	public static void main( String[] args )
 	{
 		try {
+			if(args.length>0){
+				keywordExtractor = new KeywordExtractor("debug"); // correct model location when running manually
+			} else {
+				keywordExtractor =  new KeywordExtractor("stanford");
+			}
 
 			dbManager = new DatabaseManager();
 
@@ -195,7 +200,8 @@ public class App
 
 						processSingleTweet();
 
-						if( System.currentTimeMillis() > refreshTime + 10*1000 ){ // Every 10 seconds
+						// Every statusRate seconds
+						if( System.currentTimeMillis() > refreshTime + message.getStatusRate()*1000 ){ 
 
 							// Save status
 							dbManager.saveStatus(tweetTotal, matchTotal, limitTotal, System.currentTimeMillis()/1000);
@@ -203,8 +209,8 @@ public class App
 							tweetTotal = 0; matchTotal = 0; limitTotal = 0;
 
 							// Check for input
-							message = new ControlMessage(bufferedReader, ControlMessage.NONBLOCKING);
-							if(!message.isEmpty() &&  message.getCommand().equals("stop")){
+							ControlMessage newMessage = new ControlMessage(bufferedReader, ControlMessage.NONBLOCKING);
+							if(!newMessage.isEmpty() &&  newMessage.getCommand().equals("stop")){
 
 								hosebirdClient.stop();
 								System.out.println("Stop command received, stoping...");
@@ -248,7 +254,6 @@ public class App
 		groupsList = message.getGroups();
 		feedsList.clear();
 		newsList.clear();
-		rejectDate = message.getRejectDate();
 
 		groupIndex = 0;
 		feedIndex = 0;
@@ -257,7 +262,7 @@ public class App
 	private static void processSingleFeed() throws SSLException {
 
 		// Get final copies of variables for reading inside the streams
-		final LocalDate filterDate = rejectDate;
+		final LocalDate filterDate = message.getRejectDate();
 
 		// Fetch a single feed from a single group
 		currentFeedUrl = groupsList.get(groupIndex).getFeedUrls().get(feedIndex);
@@ -296,7 +301,7 @@ public class App
 				newsList.stream()
 					// Look through older news items
 					.filter( oldNewsItem -> {
-						if(newsItem.equals(oldNewsItem)){
+						if(newsItem.compare(oldNewsItem) > message.getNewsThreshold()){
 							// merge with old NewsItem
 							oldNewsItem.addFeed(feed);
 							return true; // discard new newsItem
@@ -414,7 +419,7 @@ public class App
 			tweetTotal++;
 
 			newsList.stream()
-				.filter( newsItem -> tweet.compare(newsItem, comparator) > 0.1 )
+				.filter( newsItem -> tweet.compare(newsItem, comparator) > message.getTweetThreshold() )
 				.forEach( newsItem -> {
 					try{
 						System.out.println("\nMatch! News: " + newsItem.getTitle() + "\n Tweet: " + tweet.getText());
