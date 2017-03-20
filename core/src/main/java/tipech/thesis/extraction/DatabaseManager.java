@@ -52,9 +52,9 @@ public class DatabaseManager {
 		// create a new table
 		Statement create = connection.createStatement();
 		String createSql = "CREATE TABLE groups " +
-			"(id 	INT PRIMARY KEY NOT NULL," +
-			" name 	TEXT 			NOT NULL," +
-			" color TEXT 			NOT NULL)";
+			"(id 	INTEGER PRIMARY KEY NOT NULL," +
+			" name 	TEXT 	NOT NULL," +
+			" color TEXT 	NOT NULL)";
 
 		create.executeUpdate(createSql);
 		create.close();
@@ -87,9 +87,9 @@ public class DatabaseManager {
 		// create a new table
 		Statement create = connection.createStatement();
 		String createSql = "CREATE TABLE feeds " +
-			"(id 		INT PRIMARY KEY NOT NULL," +
-			" url 		TEXT 			NOT NULL," +
-			" feedGroup INT 			NOT NULL)";
+			"(id 		INTEGER PRIMARY KEY NOT NULL," +
+			" url 		TEXT 	NOT NULL," +
+			" feedGroup INTEGER NOT NULL)";
 
 		create.executeUpdate(createSql);
 		create.close();
@@ -122,9 +122,9 @@ public class DatabaseManager {
 		// create a new table to hold news items
 		Statement createNewsItems = connection.createStatement();
 		String createNewsItemsSql = "CREATE TABLE news " +
-			"(id 		INT PRIMARY KEY NOT NULL," +
-			" title		TEXT 			NOT NULL," +
-			" keywords 	TEXT 			NOT NULL)";
+			"(id 		INTEGER PRIMARY KEY NOT NULL," +
+			" title		TEXT 	NOT NULL," +
+			" keywords 	TEXT 	NOT NULL)";
 
 		createNewsItems.executeUpdate(createNewsItemsSql);
 		createNewsItems.close();
@@ -140,9 +140,9 @@ public class DatabaseManager {
 		// create a new table to hold news-group relations
 		Statement createNewsGroups = connection.createStatement();
 		String createNewsGroupsSql = "CREATE TABLE newsGroups " +
-			"(id 			INT PRIMARY KEY NOT NULL," +
-			" newsItemId 	INT 			NOT NULL," +
-			" groupId 		INT 			NOT NULL)";
+			"(id 			INTEGER PRIMARY KEY NOT NULL," +
+			" newsItemId 	INTEGER NOT NULL," +
+			" groupId 		INTEGER NOT NULL)";
 
 		createNewsGroups.executeUpdate(createNewsGroupsSql);
 		createNewsGroups.close();
@@ -202,9 +202,9 @@ public class DatabaseManager {
 		// create a new table to hold news tweet entries
 		Statement createTweetEntries = connection.createStatement();
 		String createTweetEntriesSql = "CREATE TABLE tweets " +
-			"(id 		INT PRIMARY KEY NOT NULL," +
-			" newsId	INT 			NOT NULL," +
-			" time 		INT 			NOT NULL)";
+			"(id 		INTEGER PRIMARY KEY," +
+			" newsId	INTEGER NOT NULL," +
+			" time 		INTEGER NOT NULL)";
 
 		createTweetEntries.executeUpdate(createTweetEntriesSql);
 		createTweetEntries.close();
@@ -213,9 +213,42 @@ public class DatabaseManager {
 	public void saveTweetEntry(int newsId, long time) throws SQLException{
 
 		// save single tweet entry
-		Statement saveTweet = connection.createStatement();
-		String saveTweetSql = "INSERT INTO tweets ('newsId','time') VALUES(" + newsId + ", " + time + ")";
+		Statement insertTweet = connection.createStatement();
+		String insertTweetSql = "INSERT INTO tweets ('newsId','time') VALUES(" + newsId + ", " + time + ")";
 
-		saveTweet.executeUpdate(saveTweetSql);
+		insertTweet.executeUpdate(insertTweetSql);
 	}
+
+	public void setupStatus() throws SQLException{
+
+		// drop table if exists
+		Statement dropStatus = connection.createStatement();
+		String dropStatusSql = "DROP TABLE IF EXISTS status";
+
+		dropStatus.executeUpdate(dropStatusSql);
+		dropStatus.close();
+
+		// create a new table to hold news tweet entries
+		Statement createStatus = connection.createStatement();
+		String createStatusSql = "CREATE TABLE status " +
+			"(id 		INTEGER PRIMARY KEY," +
+			" total		INTEGER NOT NULL," +
+			" matched	INTEGER NOT NULL," +
+			" limited	INTEGER NOT NULL," +
+			" time 		INTEGER NOT NULL)";
+
+		createStatus.executeUpdate(createStatusSql);
+		createStatus.close();
+	}
+
+	public void saveStatus(int total, int matched, int limited, long time) throws SQLException{
+
+		// save status
+		Statement insertStatus = connection.createStatement();
+		String insertStatusSql = "INSERT INTO status ('total','matched','limited','time')" +
+			" VALUES(" + total + ", " + matched + ", " + limited + ", " + time + ")";
+
+		insertStatus.executeUpdate(insertStatusSql);
+	}
+
 }

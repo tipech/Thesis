@@ -53,8 +53,6 @@ public class JaccardComparator {
 		wJaccard =  Math.min(wJaccard, 1.0);
 
 		if (wJaccard > 0.1) {
-			System.out.println("intersection: " + intersection + ",\n union: " + union );
-			System.out.println("jaccard: " + jaccard + ", weighted: " + wJaccard);
 			
 		}
 

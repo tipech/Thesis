@@ -5,6 +5,9 @@ import java.util.List;
 
 import java.time.LocalDate;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonObject;
@@ -23,38 +26,53 @@ public class ControlMessage {
 
 	final List<FeedGroup> groups = new ArrayList<FeedGroup>();
 
-	public ControlMessage(String rawMessage) {
+	public ControlMessage(BufferedReader bufferedReader, boolean block) throws IOException{
 
-		Gson gson = new Gson();
-		JsonObject message = new JsonParser().parse(rawMessage).getAsJsonObject();
-		
-		this.command = message.get("command").getAsString();
-		JsonObject data = message.get("data").getAsJsonObject();
-		JsonObject settings = data.get("settings").getAsJsonObject();
+		if( block || (!block && bufferedReader.ready()) ){ // if blocking, or stdin not empty
 
-		// Parse JSON into Groups and Feed urls
-		JsonArray groupsJson = data.getAsJsonArray("groups");
-		
-		for(final JsonElement groupJson : groupsJson) {
+			String rawMessage = bufferedReader.readLine();
+			JsonObject message = new JsonParser().parse(rawMessage).getAsJsonObject();
+			
+			this.command = message.get("command").getAsString();
 
-			FeedGroup group = gson.fromJson(groupJson.toString(), FeedGroup.class);
-			group.updateId(); // manually set id because gson
-			groups.add(group);
-		}
+			if(message.has("data")){
 
-		// Provide a list of accepted RSS entry dates based on date option
-		String dateOption = settings.get("date").getAsString();
-		
-		switch (dateOption){
-			case "week":
-				this.rejectDate = LocalDate.now().minusDays(8); // previous week
-				break;
-			case "2days":
-				this.rejectDate = LocalDate.now().minusDays(3); // 3 days+ ago
-				break;
-			default:
-				this.rejectDate = LocalDate.now().minusDays(1); // yesterday
-				break;
+				JsonObject data = message.get("data").getAsJsonObject();
+				JsonObject settings = data.get("settings").getAsJsonObject();
+
+				// Parse JSON into Groups and Feed urls
+				JsonArray groupsJson = data.getAsJsonArray("groups");
+				Gson gson = new Gson();
+				
+				for(final JsonElement groupJson : groupsJson) {
+
+					FeedGroup group = gson.fromJson(groupJson.toString(), FeedGroup.class);
+					group.updateId(); // manually set id because gson
+					groups.add(group);
+				}
+
+				// Provide a list of accepted RSS entry dates based on date option
+				String dateOption = settings.get("date").getAsString();
+				
+				switch (dateOption){
+					case "week":
+						this.rejectDate = LocalDate.now().minusDays(8); // previous week
+						break;
+					case "2days":
+						this.rejectDate = LocalDate.now().minusDays(3); // 3 days+ ago
+						break;
+					default:
+						this.rejectDate = LocalDate.now().minusDays(1); // yesterday
+						break;
+				}
+			} else {
+
+				this.rejectDate = null;
+			}
+			
+		} else {
+			this.command = "none";
+			this.rejectDate = null;
 		}
 	}
 
@@ -70,10 +88,18 @@ public class ControlMessage {
 		return command;
 	}
 
+	public boolean isEmpty() {
+		return command.equals("none");
+	}
+
 
 	@Override
 	public String toString() {
 		return "Message: [command=" + command + "]";
 	}
 
+	// ---- Static Members ----
+
+	public static boolean BLOCKING = true;
+	public static boolean NONBLOCKING = false; 
 }

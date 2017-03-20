@@ -26,6 +26,9 @@ import java.lang.InterruptedException;
 import javax.net.ssl.SSLException;
 import java.sql.SQLException;
 
+import com.google.gson.JsonParser;
+import com.google.gson.JsonObject;
+
 // import org.apache.http.HttpHost;
 import com.twitter.hbc.core.Hosts;
 import com.twitter.hbc.core.HttpHosts;
@@ -66,7 +69,7 @@ public class App
 	/* =============== General Setup =============== */
 
 	private static STATE state;
-	private static int TIMEOUT = 20; // seconds
+	private static int TIMEOUT = 80; // seconds
 
 	// ---- Managers ----
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
@@ -85,7 +88,12 @@ public class App
 	private static int feedIndex = 0;
 	private static int messageCount = 0;
 
+	private static long startTime;
 	private static long endTime;
+	private static long refreshTime;
+	private static int tweetTotal;
+	private static int matchTotal;
+	private static int limitTotal;
 	private static boolean stopLoop = false;
 
 	// ---- Helper objects ----
@@ -124,8 +132,6 @@ public class App
 			dbManager = new DatabaseManager();
 
 			endTime = System.currentTimeMillis() + TIMEOUT*1000; // Timeout after 20 seconds
-			// long startTime = System.currentTimeMillis / 1000;
-			int repetitions = 0;
 
 			state = STATE.IDLE;
 			
@@ -137,7 +143,7 @@ public class App
 
 					// ------------ Idle State ------------
 					case IDLE:
-						message = new ControlMessage(checkInput(true));
+						message = new ControlMessage(bufferedReader, ControlMessage.BLOCKING);
 
 						// Wait for start command
 						if( message.getCommand().equals("start") ){
@@ -152,8 +158,6 @@ public class App
 
 					// ----- Keyword Extraction State -----
 					case KEYWORDS:
-
-						checkInput(false);
 
 						try{
 						
@@ -175,7 +179,12 @@ public class App
 
 						setupDatabase();
 						setupStream();
-						// System.out.println(newsList);
+
+						tweetTotal = 0; matchTotal = 0; limitTotal = 0;
+						startTime = System.currentTimeMillis();
+						refreshTime = startTime;
+
+						dbManager.saveStatus(0, 0, 0, startTime/1000);
 
 						System.out.println("Setup done, starting live stream...");
 						state = STATE.LIVE;
@@ -184,35 +193,23 @@ public class App
 					// ------- Live Streaming State -------
 					case LIVE:
 
-							String rawTweet = msgQueue.take();
+						processSingleTweet();
 
-						try {
-							final Tweet tweet = new Tweet(rawTweet);
+						if( System.currentTimeMillis() > refreshTime + 10*1000 ){ // Every 10 seconds
 
-							System.out.println(repetitions);
-							newsList.stream()
-								.forEach( newsItem -> {
-									try{
-										if( tweet.compare(newsItem, comparator) > 0.1){
+							// Save status
+							dbManager.saveStatus(tweetTotal, matchTotal, limitTotal, System.currentTimeMillis()/1000);
+							refreshTime = System.currentTimeMillis();
+							tweetTotal = 0; matchTotal = 0; limitTotal = 0;
 
-											System.out.println("Match! News: " + newsItem.getTitle() +
-												",\n Tweet: " + tweet.getText() );
-											newsItem.setLastTweet(tweet);
-											dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime());
-										}
-									} catch (SQLException e) {
-										e.printStackTrace();
-									}
-								});
+							// Check for input
+							message = new ControlMessage(bufferedReader, ControlMessage.NONBLOCKING);
+							if(!message.isEmpty() &&  message.getCommand().equals("stop")){
 
-						} catch (NullPointerException e){
-							System.out.println(rawTweet);
-						}
-
-
-						repetitions++;
-						if(repetitions >= 300){
-							stopLoop = true;
+								hosebirdClient.stop();
+								System.out.println("Stop command received, stoping...");
+								state = STATE.IDLE;
+							}
 						}						
 						break;
 				}
@@ -243,16 +240,6 @@ public class App
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-		}
-	}
-
-	private static String checkInput(boolean block) throws IOException{
-
-		if( block || (!block && bufferedReader.ready()) ){ // if blocking, or stdin not empty
-
-			return bufferedReader.readLine();
-		} else {
-			return null;
 		}
 	}
 
@@ -361,6 +348,10 @@ public class App
 		System.out.println("Storing news items...");	
 		dbManager.saveNews( newsList );
 
+		// Prepare the statuses table
+		System.out.println("Preparing status table...");	
+		dbManager.setupStatus();
+
 		// Prepare the news tweet entries
 		System.out.println("Preparing news tweet entry table...");	
 		dbManager.setupTweets();
@@ -395,12 +386,12 @@ public class App
 
 		// Final setup
 		hosebirdClient = new ClientBuilder()
-			.name("Hosebird-Client-01") 		// optional: mainly for logging
+			.name("Hosebird-Client-01") 			// optional: mainly for logging
 			.hosts(Constants.STREAM_HOST)
 			.authentication(hosebirdAuth)
 			.endpoint(hosebirdEndpoint)
 			.processor(new StringDelimitedProcessor(msgQueue))
-			.proxy("icache.intranet.gr", 80)
+			.proxy("icache.intranet.gr", 80)		// only used behind a proxy
 			// .eventMessageQueue(eventQueue)		// optional: to process client events
 			.build();
 
@@ -409,7 +400,32 @@ public class App
 		hosebirdClient.connect();
 	}
 
-	private static void processSingleTweet(){
+	private static void processSingleTweet() throws InterruptedException{
 
+		JsonObject jsonTweet = new JsonParser().parse( msgQueue.take() ).getAsJsonObject();
+
+		if(jsonTweet.has("limit")){
+
+			limitTotal = jsonTweet.get("limit").getAsJsonObject().get("track").getAsInt() - limitTotal;
+
+		} else {
+
+			final Tweet tweet = new Tweet(jsonTweet);
+			tweetTotal++;
+
+			newsList.stream()
+				.filter( newsItem -> tweet.compare(newsItem, comparator) > 0.1 )
+				.forEach( newsItem -> {
+					try{
+						System.out.println("\nMatch! News: " + newsItem.getTitle() + "\n Tweet: " + tweet.getText());
+						newsItem.setLastTweet(tweet);
+						dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime());
+						matchTotal++;
+					
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				});
+		}
 	}
 }

@@ -16,6 +16,7 @@ import tipech.thesis.extraction.JaccardComparator;
  */
 public class Tweet {
 
+
 	private long time;
 	private String user;
 	private String text;
@@ -23,7 +24,12 @@ public class Tweet {
 
 	public Tweet(String rawTweet) {
 
-		JsonObject jsonTweet = new JsonParser().parse(rawTweet).getAsJsonObject();
+		this( new JsonParser().parse(rawTweet).getAsJsonObject() );
+
+	}
+
+	public Tweet(JsonObject jsonTweet) {
+
 		this.user = jsonTweet.get("user").getAsJsonObject().get("name").getAsString();
 		this.text = jsonTweet.get("text").getAsString();
 		this.time = jsonTweet.get("timestamp_ms").getAsLong();
@@ -36,6 +42,7 @@ public class Tweet {
 			.collect(Collectors.toList());
 
 	}
+	
 
 	public long getTime() {
 		return time;
