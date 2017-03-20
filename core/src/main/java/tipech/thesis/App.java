@@ -173,7 +173,7 @@ public class App
 					// -- Database & Stream Setup State ---
 					case SETUP:
 
-						// setupDatabase();
+						setupDatabase();
 						setupStream();
 						// System.out.println(newsList);
 
@@ -189,11 +189,21 @@ public class App
 						try {
 							final Tweet tweet = new Tweet(rawTweet);
 
+							System.out.println(repetitions);
 							newsList.stream()
-								.forEach( newsItem -> tweet.matchWith(newsItem, comparator));
+								.forEach( newsItem -> {
+									try{
+										if( tweet.compare(newsItem, comparator) > 0.1){
 
-							// System.out.print(tweet);
-							// System.out.print(" -> " + repetitions + " \n\n");
+											System.out.println("Match! News: " + newsItem.getTitle() +
+												",\n Tweet: " + tweet.getText() );
+											newsItem.setLastTweet(tweet);
+											dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime());
+										}
+									} catch (SQLException e) {
+										e.printStackTrace();
+									}
+								});
 
 						} catch (NullPointerException e){
 							System.out.println(rawTweet);
@@ -350,6 +360,10 @@ public class App
 		// Store the news items
 		System.out.println("Storing news items...");	
 		dbManager.saveNews( newsList );
+
+		// Prepare the news tweet entries
+		System.out.println("Preparing news tweet entry table...");	
+		dbManager.setupTweets();
 	}
 
 	private static void setupStream() {

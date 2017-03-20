@@ -20,6 +20,7 @@ public class NewsItem {
 	private String title;
 	private List<Feed> feeds;
 	private Map<String, Integer> terms;
+	private Tweet lastTweet;
 
 	public NewsItem(String title, Feed feed){
 
@@ -69,6 +70,14 @@ public class NewsItem {
 	public String getKeywordString(){
 
 		return String.join( " ", this.getKeywords() );
+	}
+
+	public Tweet getLastTweet(){
+		return lastTweet;
+	}
+
+	public void setLastTweet(Tweet lastTweet){
+		this.lastTweet = lastTweet;
 	}
 
 

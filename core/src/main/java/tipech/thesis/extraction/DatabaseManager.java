@@ -189,4 +189,33 @@ public class DatabaseManager {
 		insertNewsGroups.close();
 
 	}
+
+	public void setupTweets() throws SQLException{
+
+		// drop table if exists
+		Statement dropTweetEntries = connection.createStatement();
+		String dropTweetEntriesSql = "DROP TABLE IF EXISTS tweets";
+
+		dropTweetEntries.executeUpdate(dropTweetEntriesSql);
+		dropTweetEntries.close();
+
+		// create a new table to hold news tweet entries
+		Statement createTweetEntries = connection.createStatement();
+		String createTweetEntriesSql = "CREATE TABLE tweets " +
+			"(id 		INT PRIMARY KEY NOT NULL," +
+			" newsId	INT 			NOT NULL," +
+			" time 		INT 			NOT NULL)";
+
+		createTweetEntries.executeUpdate(createTweetEntriesSql);
+		createTweetEntries.close();
+	}
+
+	public void saveTweetEntry(int newsId, long time) throws SQLException{
+
+		// save single tweet entry
+		Statement saveTweet = connection.createStatement();
+		String saveTweetSql = "INSERT INTO tweets ('newsId','time') VALUES(" + newsId + ", " + time + ")";
+
+		saveTweet.executeUpdate(saveTweetSql);
+	}
 }

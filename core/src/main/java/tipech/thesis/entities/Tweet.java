@@ -53,14 +53,9 @@ public class Tweet {
 		return words;
 	}
 
-	public void matchWith(NewsItem item, JaccardComparator comparator) {
+	public double compare(NewsItem item, JaccardComparator comparator) {
 
-		double similarity = comparator.similarity(getWords(), item.getKeywords(), true, true);
-
-		if ( similarity > 0.1 ){
-
-			System.out.println("It's a match! Similarity: " + similarity + ",\n News item: " + item.getTitle() + ",\n Tweet: " + text );
-		}
+		return comparator.similarity(getWords(), item.getKeywords(), true, true);
 	}
 
 	@Override

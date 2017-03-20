@@ -49,9 +49,10 @@ def start():
 
 	global process
 
-	process.stdin.write('{ "command": "start", "data": ' + dataJson + "}\n")
-	# process.stdin.write('{ "command": "quit"}\n')
+	# process.stdin.write('{ "command": "start", "data": ' + dataJson + "}\n")
+	process.stdin.write('{ "command": "quit"}\n')
 
+	status['state'] = "fetch"
 
 	return json.dumps(status)
 
