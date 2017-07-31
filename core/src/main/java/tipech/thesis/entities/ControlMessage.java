@@ -19,13 +19,13 @@ import com.google.gson.JsonArray;
  */
 public class ControlMessage {
 
-	final String command;
-	final LocalDate rejectDate; 		// reject everything before that date
-	final double newsThreshold = 0.3; 	// news item cross-referencing similarity threshold
-	final double tweetThreshold = 0.1; 	// news item - tweet similarity threshold
-	final int statusRate = 10;			// how often status gets refreshed
+	private String command;
+	private LocalDate rejectDate; 		// reject everything before that date
+	private double newsThreshold = 0.3; 	// news item cross-referencing similarity threshold
+	private double tweetThreshold = 0.1; 	// news item - tweet similarity threshold
+	private int statusRate = 5;			// how often status gets refreshed
 
-	final List<FeedGroup> groups = new ArrayList<FeedGroup>();
+	private final List<FeedGroup> groups = new ArrayList<FeedGroup>();
 
 	public ControlMessage(BufferedReader bufferedReader, boolean block) throws IOException{
 
@@ -66,6 +66,11 @@ public class ControlMessage {
 						this.rejectDate = LocalDate.now().minusDays(1); // yesterday
 						break;
 				}
+
+				// Get status refresh rate and thresholds
+				this.statusRate = settings.get("dataRate").getAsInt();
+				this.newsThreshold = settings.get("newsThreshold").getAsDouble();
+				this.tweetThreshold = settings.get("tweetThreshold").getAsDouble();
 			} else {
 
 				this.rejectDate = null;

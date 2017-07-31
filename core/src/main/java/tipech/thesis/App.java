@@ -69,7 +69,7 @@ public class App
 	/* =============== General Setup =============== */
 
 	private static STATE state;
-	private static int TIMEOUT = 80; // seconds
+	private static int TIMEOUT = 10*60; // seconds until process termination
 
 	// ---- Managers ----
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
@@ -154,6 +154,8 @@ public class App
 						if( message.getCommand().equals("start") ){
 
 							System.out.println("Start command received, starting...");
+							// message server process we started
+							System.err.println("STATUS_START");
 
 							start();							
 							state = STATE.KEYWORDS;
@@ -172,8 +174,9 @@ public class App
 							System.out.println("RSS over https connection not supported!");
 						}
 
-						if( nextFeed() ){
-							System.out.println("News Items extraction done, storing to database...");
+						if( !nextFeed() ){
+							System.out.println("Extracting news items and keywords from RSS feeds...");
+							System.err.println("STATUS_SETUP");
 							state = STATE.SETUP;
 						}
 						
@@ -192,6 +195,7 @@ public class App
 						dbManager.saveStatus(0, 0, 0, startTime/1000);
 
 						System.out.println("Setup done, starting live stream...");
+						System.err.println("STATUS_LIVE");
 						state = STATE.LIVE;
 						break;
 
@@ -200,7 +204,7 @@ public class App
 
 						processSingleTweet();
 
-						// Every statusRate seconds
+						// Every *statusRate* seconds (default: 10), insert measurements into database
 						if( System.currentTimeMillis() > refreshTime + message.getStatusRate()*1000 ){ 
 
 							// Save status
@@ -210,11 +214,21 @@ public class App
 
 							// Check for input
 							ControlMessage newMessage = new ControlMessage(bufferedReader, ControlMessage.NONBLOCKING);
-							if(!newMessage.isEmpty() &&  newMessage.getCommand().equals("stop")){
-
-								hosebirdClient.stop();
-								System.out.println("Stop command received, stoping...");
-								state = STATE.IDLE;
+							
+							if( !newMessage.isEmpty() ){
+								// if told to stop
+								if( newMessage.getCommand().equals("stop") ){
+									
+									hosebirdClient.stop();
+									System.err.println("STATUS_STOP");
+									System.out.println("Stop command received, stopping...");
+									state = STATE.IDLE;
+								
+								// if asked for status
+								} else if(newMessage.getCommand().equals("status")){
+									// message server process we are running normally
+									System.err.println("STATUS_LIVE");
+								}
 							}
 						}						
 						break;
@@ -238,6 +252,8 @@ public class App
 				dbManager.close();
 				hosebirdClient.stop();
 				bufferedReader.close();
+
+				System.err.println("STATUS_STOP");
 
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -281,7 +297,7 @@ public class App
 			)
 			// Turn remaining headlines into news items
 			.map( headline -> 
-				new NewsItem(headline.getTitle() + " " + headline.getDescription(), feed) 
+				new NewsItem(headline.getTitle() + " |&| " + headline.getDescription(), feed) 
 			)
 			// Extract Keywords
 			.peek( newsItem -> newsItem.extractTerms(keywordExtractor))
@@ -325,17 +341,17 @@ public class App
 		if (feedIndex < groupsList.get(groupIndex).getFeedUrls().size()-1){
 
 			feedIndex++;
-			return false;
+			return true;
 
 		} else if (groupIndex < groupsList.size()-1){
 
 			groupIndex++;
 			feedIndex = 0;
-			return false;
+			return true;
 
 		} else {
 			// Keyword extraction done
-			return true;			
+			return false;			
 		}
 	}
 

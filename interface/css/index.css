@@ -171,7 +171,7 @@ ul {
 	background-color: #28F;
 }
 
-/* ============== Main Content =============== */
+/* ============ Settings Content ============= */
 
 .content {
 
@@ -197,6 +197,12 @@ ul {
 
 	display: none;
 	background-color: #F88;
+}
+
+.info.box {
+
+	display: none;
+	background-color: #8D8;
 }
 
 
@@ -389,6 +395,7 @@ ul {
 
 	display: flex;
 	flex-wrap: wrap;
+	justify-content: space-between;
 }
 .option {
 
@@ -429,7 +436,7 @@ ul {
 	padding: 2px 5px;
 }
 
-/* ============= Final Behaviors ============= */
+/* ------------- Final Behaviors ------------- */
 
 .add:before {
 	content: "+";
@@ -448,4 +455,12 @@ ul {
 .add, .remove, .delete {
 
 	transition: background-color 200ms;
+}
+
+
+/* ============== Data Content =============== */
+
+.news > li {
+
+	margin-bottom: 10px;
 }

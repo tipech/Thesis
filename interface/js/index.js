@@ -1,7 +1,7 @@
 $( document ).ready( function() {
 
-	var waitTime = 1000; // ms, time to wait for state changes
-	var refreshTime = 1000; // ms, time to wait between data retrieval (1Hz)
+	var waitTime = 2000; // ms, time to wait for state changes
+	var updateTime = 1000; // ms, time to wait between data retrieval (1Hz)
 	var rateThreshold = 1000; // The tweet rate where we hit the twitter cap and results may not be accurate
 
 	var timer;
@@ -67,12 +67,15 @@ $( document ).ready( function() {
 
 				$( ".spinner .ring" ).fadeOut( 1000 );
 				$( ".spinner .circle" ).css( { "background-color": "#000", "width": "110px", "height": "110px", "border-radius": "55px" } );
-				$( ".spinner .circle .status" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
+				$( ".spinner .circle .status" ).fadeOut( 0 ).delay( 1200 ).fadeIn();
 				$( ".spinner .circle .status" ).text( "Offline" );
 				$( ".spinner .circle .status" ).css( { "color": "white" } );
 
-				$( ".data, .control" ).hide();
+				$( ".data, .control, .info" ).hide();
 				$( ".help" ).show();
+
+				$( ".error" ).empty();
+				$( ".info" ).empty();
 				break;
 
 			case "boot":
@@ -86,7 +89,7 @@ $( document ).ready( function() {
 				$( ".spinner .circle" ).css( { "background-color": "#F44", "width": "50px", "height": "50px", "border-radius": "25px" } );
 				$( ".spinner .circle .status" ).stop().hide();
 
-				$( ".data, .control" ).hide();
+				$( ".data, .control, .error, .info" ).hide();
 				$( ".help" ).fadeOut();
 				break;
 
@@ -98,15 +101,16 @@ $( document ).ready( function() {
 
 				$( ".spinner .ring" ).fadeOut( 1000 );
 				$( ".spinner .circle" ).css( { "background-color": "#28F", "width": "110px", "height": "110px", "border-radius": "55px" } );
-				$( ".spinner .circle .status" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
+				$( ".spinner .circle .status" ).hide();
+				$( ".spinner .circle .status" ).fadeOut( 0 ).delay( 1200 ).fadeIn();
 				$( ".spinner .circle .status" ).text( "Ready" );
 				$( ".spinner .circle .status" ).css( { "color": "white" } );
 
-				$( ".help, .data" ).hide();
+				$( ".help, .data, .error, .info" ).hide();
 				$( ".control" ).show();
 				break;
 
-			case "batch":
+			case "prepare":
 
 				$( ".button" ).hide();
 				$( ".action.message" ).text( "Processing..." );
@@ -117,8 +121,23 @@ $( document ).ready( function() {
 				$( ".spinner .circle" ).css( { "background-color": "#B7F", "width": "50px", "height": "50px", "border-radius": "25px" } );
 				$( ".spinner .circle .status" ).stop().hide();
 
-				$( ".help, .data" ).hide();
+				$( ".help, .data, .error, .info" ).hide();
 				$( ".control" ).fadeOut();
+				break;
+
+			case "live":
+
+				$( ".action.message" ).hide();
+				$( ".init.button, .start.button, .reset.button" ).hide();
+				$( ".stop.button" ).fadeIn();
+
+				$( ".spinner .ring" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
+				$( ".spinner .circle" ).css( { "width": "110px", "height": "110px", "border-radius": "55px" } );
+				$( ".spinner .circle .status" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
+				$( ".spinner .circle .status" ).css( { "color": "white" } );
+
+				$( ".help, .control, .error, .info" ).hide();
+				$( ".data" ).show();
 				break;
 
 			case "done":
@@ -133,38 +152,21 @@ $( document ).ready( function() {
 				$( ".spinner .circle .status" ).text( "Done" );
 				$( ".spinner .circle .status" ).css( { "color": "white" } );
 
-				$( ".help, .control" ).hide();
-				$( ".data" ).show();
-				break;
-
-			case "live":
-
-				$( ".action.message" ).hide();
-				$( ".init.button, .start.button, .reset.button" ).hide();
-				$( ".stop.button" ).fadeIn();
-
-				$( ".spinner .ring" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
-				$( ".spinner .circle" ).css( { "width": "110px", "height": "110px", "border-radius": "55px" } );
-				$( ".spinner .circle .status" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
-				$( ".spinner .circle .status" ).css( { "color": "white" } );
-
-				updateRate( data.rate );
-
-				$( ".help, .control" ).hide();
+				$( ".help, .control, .error, .info" ).hide();
 				$( ".data" ).show();
 				break;
 		}
 	}
 
-	function updateRate( rate ) {
+	function showRate( rate ) {
 
-		$( ".spinner .circle .status" ).text( status.rate + "/s" );
+		$( ".spinner .circle .status" ).text( rate + "/s" );
 
 		if ( rate < rateThreshold * 0.75 ) {
 
 			$( ".spinner .circle" ).css( { "background-color": "#1A0" } ); // green
 
-		} else if ( rate > rateThreshold * 0.75 && status.rate < rateThreshold ) {
+		} else if ( rate > rateThreshold * 0.75 && rate < rateThreshold ) {
 
 			$( ".spinner .circle" ).css( { "background-color": "#F94" } ); // orange
 
@@ -181,6 +183,12 @@ $( document ).ready( function() {
 
 		$( ".error.box" ).append( errorWrapper );
 		$( ".error.box" ).show();
+	}
+
+	function showInfo( infoText ) {
+
+		$( ".info.box" ).append( infoText );
+		$( ".info.box" ).show();
 	}
 
 	// ------------ Group Management ------------
@@ -205,9 +213,9 @@ $( document ).ready( function() {
 			group.find( ".delete" ).click( removeGroup );
 			group.find( ".new.feed .add" ).click( function( event ) {
 
-				var group = $( event.target ).parents( ".group" );
+				var thisGroup = $( event.target ).parents( ".group" );
 				var url = $( event.target ).siblings( "input" ).val();
-				addFeed( group, url );
+				addFeed( thisGroup, url );
 			} );
 
 			if ( parseInt( color[ 1 ], 16 ) + parseInt( color[ 3 ], 16 ) + parseInt( color[ 5 ], 16 ) < 25 ) {
@@ -332,15 +340,27 @@ $( document ).ready( function() {
 			return false;
 		}
 
-		var rssRate = $( "#rssRate" ).val();
+		var newsThreshold = $( "#newsThreshold" ).val();
 
-		if ( rssRate != "" && typeof parseInt( rssRate ) == "number" ) {
+		if ( newsThreshold != "" && typeof parseFloat( newsThreshold ) == "number" ) {
 
-			newSettings.rssRate = rssRate;
+			newSettings.newsThreshold = newsThreshold;
 
 		} else {
 
-			flashError( $( "#rssRate" ) );
+			flashError( $( "#newsThreshold" ) );
+			return false;
+		}
+
+		var tweetThreshold = $( "#tweetThreshold" ).val();
+
+		if ( tweetThreshold != "" && typeof parseFloat( tweetThreshold ) == "number" ) {
+
+			newSettings.tweetThreshold = tweetThreshold;
+
+		} else {
+
+			flashError( $( "#tweetThreshold" ) );
 			return false;
 		}
 
@@ -360,8 +380,9 @@ $( document ).ready( function() {
 
 		$( ".date option[value='today']").prop('selected', true);
 
-		$( "#dataRate" ).val( "1" );
-		$( "#rssRate" ).val( "600" );
+		$( "#dataRate" ).val( "5" );
+		$( "#newsThreshold" ).val( "0.3" );
+		$( "#tweetThreshold" ).val( "0.1" );
 	}
 
 
@@ -403,14 +424,14 @@ $( document ).ready( function() {
 
 	// =========== Control Functions ============
 
-	function getStatus( callback ) {
+	function getAPI( url, callback ) {
 
 		$.get( {
-			url: "status",
+			url: url,
 			dataType: "json",
 			error: function( error ) {
 
-				showError( error.responseText );
+				showError( error.responseText ? error.responseText : "Server process unreachable!" );
 			},
 			success: function( data ) {
 
@@ -427,38 +448,26 @@ $( document ).ready( function() {
 			dataType: "json",
 			error: function( error ) {
 
-				showError( error.responseText );
+				showError( error.responseText ? error.responseText : "Server process unreachable!" );
 			},
-			success: function( data ) {
+			success: function( status ) {
 
-				if ( data.state == "off" ) {
+				if ( status.state == "off" ) {
 
-					data[ 'error' ] = "Nothing Happened";
+					status[ 'error' ] = "Nothing Happened";
+					showStatus( status );
 
-				} else if ( data.state != "idle" ) {
+				} else {
 
-					timer = setTimeout( checkBooted, waitTime );
+					// wait until system booted
+					waitUntilState( "idle", function( status ){
+
+						// when system is ready, show it
+						showStatus( status );
+					});
 				}
-
-				showStatus( data );
 			}
 		} );
-	}
-
-	function checkBooted() {
-
-		getStatus( function( status ) {
-
-			if ( status.state != "idle" ) { // wait some more
-
-				timer = setTimeout( checkBooted, waitTime );
-
-			} else { // system booted
-
-				showStatus( status );
-			}
-		} );
-
 	}
 
 	function start() {
@@ -474,35 +483,122 @@ $( document ).ready( function() {
 		groups = groupsResult;
 		settings = settingsResult;
 
-		console.log(JSON.stringify( { "groups": groups, "settings": settings } ));
-
 		$.post( {
 			url: "start",
 			data: JSON.stringify( { "groups": groups, "settings": settings } ),
 			dataType: "json",
 			error: function( error ) {
 
-				showError( error.responseText );
+				showError( error.responseText ? error.responseText : "Server process unreachable!" );
 			},
-			success: function( data ) {
+			success: function( status ) {
 
-				if ( data.state == "idle" ) {
+				if ( status.state == "idle" ) {
 
-					data[ 'error' ] = "Nothing Happened";
+					status[ 'error' ] = "Nothing Happened";
+					showStatus( status );
 
 				} else {
 
-					timer = setTimeout( checkBooted, refreshTime );
+					// Show loading...
+					showStatus( status );
+
+					// wait until keyword extraction is done
+					waitUntilState( "setup", function( status ){
+
+						// when keyword extraction is done, show a message
+						showInfo("Extracting news items and keywords from provided feeds...");
+					});	
+
+					// wait until live processing starts
+					waitUntilState( "live", function( status ){
+
+						// when news items are ready, load them and start live processing
+						showStatus(status);
+						loadNewsItems();
+						updateData();
+					});	
 				}
 
-				showStatus( data );
 			}
 		} );
 	}
 
+	function waitUntilState( state, callback ) {
+
+		getAPI( "status", function( status ) {
+
+			if ( status.state != state ) { // wait some more
+
+				setTimeout( function(){
+
+					waitUntilState(state, callback)	
+				}, waitTime );
+
+			} else { // state reached
+
+				callback( status );
+			}
+		} ); // TODO error handling
+	}
+
+	function loadNewsItems() {
+
+		getAPI( "news", function( data ) {
+
+			$(".news").empty();
+
+			data.forEach( function(newsItem){
+
+				newsElement = $('<li class="newsItem"></li>');
+				newsElement.append('<span>' + newsItem[1].replace("|&|", "<br>") + '</span>');
+				$(".news").append(newsElement);
+			});
+
+			
+			console.log(data);
+		});
+
+	}
+
+	function updateData() {
+
+		getAPI( "data", function( data ) {
+
+			// process the data
+
+			console.log(data);
+
+			showRate(100);
+
+
+
+
+
+
+
+
+
+
+
+
+			if ( data.error === undefined ) { // if everything's ok, set timeout for next update
+				timer = setTimeout( updateData, updateTime );
+
+			} else { // else check what the issue is
+				getAPI( "status", function( status ) { 
+					showStatus( status );
+				});
+			}
+		} );
+	}
+
+
+
+
 	// =============== Page Load ================
 
-	getStatus( function( status ) {
+	getAPI( "status", function( status ) {
 
 		showStatus( status );
 
@@ -510,6 +606,11 @@ $( document ).ready( function() {
 
 			clearTimeout( timer );
 			timer = setTimeout( checkBooted, waitTime );
+
+		} else if (status.state == "live") {
+			showStatus(status);
+			loadNewsItems();
+			updateData();
 		}
 	} );
 
