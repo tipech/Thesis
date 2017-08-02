@@ -68,7 +68,7 @@ public class ControlMessage {
 				}
 
 				// Get status refresh rate and thresholds
-				this.statusRate = settings.get("dataRate").getAsInt();
+				this.statusRate = settings.get("updatePeriod").getAsInt();
 				this.newsThreshold = settings.get("newsThreshold").getAsDouble();
 				this.tweetThreshold = settings.get("tweetThreshold").getAsDouble();
 			} else {

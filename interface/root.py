@@ -4,11 +4,13 @@ from threading  import Thread
 from Queue import Queue, Empty
 
 
-status = { 'state':'off'}
+status = { 'state':'off', 'settings':{}}
 process = None;
 projectRoot = "~/Projects/Thesis/" if os.path.isdir("~/Projects/Thesis") else "../" 
 webRoot = projectRoot + "interface/"
 dbConnection = sqlite3.connect(webRoot + "data.db")
+
+windowPortion = 0.1 # portion of the time window representing "latest" data
 
 # ===================== API =====================
 
@@ -18,7 +20,7 @@ def shutdown():
 	status['state'] = "off"
 	return ""
 
-@post('/init')
+@post('/boot')
 def boot():
 
 	if(status['state'] == "off"):
@@ -61,6 +63,7 @@ def start():
 		# TODO check response
 
 		status['state'] = "prepare"
+		status['settings'] = json.loads(dataJson)['settings']
 
 	return json.dumps(status)
 
@@ -82,9 +85,12 @@ def getStatus():
 	return json.dumps(status)
 
 
-@get('/news')
-def getNews():
-	return json.dumps(selectNews())
+@get('/init')
+def initializeData():
+
+	newsItems = selectNewsItemsWithGroups()
+
+	return json.dumps({'newsItems':newsItems, 'statuses':selectAll("status"), 'settings': status['settings']})
 
 
 @get('/data')
@@ -97,23 +103,44 @@ def getLiveData():
 		status['state'] = "off"
 		return '{"error":"Core process offline."}'
 	else:
+
+		data = {"statuses": selectStatusesInWindow(str(status['settings']['windowPeriod']*windowPortion)) }
+
+
 		#fetch and retrieve data from database
-		return json.dumps(selectData())
+		return json.dumps(data)
 
 # =========== Database Access Methods ===========
 
-def selectNews():
-	
+def selectNewsItemsWithGroups():
+
 	cursor = dbConnection.cursor()
-	cursor.execute("SELECT * FROM news")
+	cursor.execute("SELECT news.id, news.title, group_concat(groups.color) FROM newsGroups"
+		+ " LEFT OUTER JOIN news ON newsGroups.newsItemId = news.id"
+		+ " LEFT OUTER JOIN groups ON newsgroups.groupId = groups.id GROUP BY news.id")
 	result = cursor.fetchall()
 	cursor.close()
 
 	return result
 
-def selectData():
+def selectStatusesInWindow(window):
+
+	cursor = dbConnection.cursor()
+	cursor.execute("SELECT * FROM status WHERE time > (SELECT time FROM status ORDER BY time DESC LIMIT 1) - "+ window)
+	result = cursor.fetchall()
+	cursor.close()
+
+	return result
+
+
+def selectAll( table ):
 	
-	return { 'test':'test' }  
+	cursor = dbConnection.cursor()
+	cursor.execute("SELECT * FROM " + table)
+	result = cursor.fetchall()
+	cursor.close()
+
+	return result
 
 
 # ================ Helper Methods ===============
@@ -179,6 +206,10 @@ def static_css():
 def static_jquery():
 	return static_file("jquery-3.1.1.min.js", root = webRoot + 'js')
 
+@route('/js/d3.js')
+def static_d3():
+	return static_file("d3.min.js", root = webRoot + 'js')
+
 @route('/js/index.js')
 def static_js():
 	return static_file("index.js", root = webRoot + 'js')
@@ -192,13 +223,15 @@ def error404(error):
 # Test route
 @get('/test')
 def test():
+	print status['settings']
 	cursor = dbConnection.cursor()
-	cursor.execute("SELECT * FROM news")
+	cursor.execute("SELECT * FROM status WHERE time > (SELECT time FROM status ORDER BY time DESC LIMIT 1) - " 
+		+ str(status['settings']['windowPeriod']))
 	result = cursor.fetchall()
 	cursor.close()
 
 
 
-	return str(result)
+	return json.dumps(result, indent=4).replace("\n","<br>").replace(" ","&nbsp;")
 
 run(host='localhost', port=8080, debug=True, reloader=True)

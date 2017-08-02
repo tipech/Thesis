@@ -69,7 +69,7 @@ public class App
 	/* =============== General Setup =============== */
 
 	private static STATE state;
-	private static int TIMEOUT = 10*60; // seconds until process termination
+	private static int TIMEOUT = 20*60; // seconds until process termination
 
 	// ---- Managers ----
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
@@ -94,6 +94,7 @@ public class App
 	private static int tweetTotal;
 	private static int matchTotal;
 	private static int limitTotal;
+	private static int lastLimit;
 	private static boolean stopLoop = false;
 
 	// ---- Helper objects ----
@@ -320,6 +321,11 @@ public class App
 						if(newsItem.compare(oldNewsItem) > message.getNewsThreshold()){
 							// merge with old NewsItem
 							oldNewsItem.addFeed(feed);
+							// if the headlines aren't exactly the same, merge them
+							if(!oldNewsItem.getTitle().equals(newsItem.getTitle())){
+
+								oldNewsItem.setTitle(oldNewsItem.getTitle() + " |&| " + newsItem.getTitle());
+							}							
 							return true; // discard new newsItem
 						} else {
 							return false;
@@ -427,7 +433,8 @@ public class App
 
 		if(jsonTweet.has("limit")){
 
-			limitTotal = jsonTweet.get("limit").getAsJsonObject().get("track").getAsInt() - limitTotal;
+			limitTotal = jsonTweet.get("limit").getAsJsonObject().get("track").getAsInt() - lastLimit + limitTotal;
+			lastLimit = jsonTweet.get("limit").getAsJsonObject().get("track").getAsInt();
 
 		} else {
 

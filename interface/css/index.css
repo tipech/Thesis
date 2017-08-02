@@ -151,7 +151,7 @@ ul {
 	cursor: pointer;
 }
 
-.init.button {
+.boot.button {
 
 	background-color: #DB1;
 }
@@ -179,6 +179,11 @@ ul {
 
 }
 
+.content > div {
+
+	margin: 10px 0 10px 20px;
+}
+
 .box {
 	padding: 10px 20px;
 
@@ -188,7 +193,6 @@ ul {
 
 .panel {
 
-	margin: 10px 0 10px 20px;
 	display: flex;
 	justify-content: space-between;
 }
@@ -460,7 +464,100 @@ ul {
 
 /* ============== Data Content =============== */
 
-.news > li {
+.data > .title {
+
+	margin-bottom: 25px;
+
+	display: flex;
+	justify-content: space-between;
+
+	font-weight: bold;
+	font-size: larger;
+}
+
+/* ---------- General Statistics ------------- */
+
+svg {
+	/*border: 1px solid #444;*/
+	margin-bottom: 25px;
+}
+
+.statsList > li {
+
+	display: flex;
+	justify-content: flex-start;
+	margin-bottom: 8px;
+	border-bottom: 1px solid #CCC;
+}
+
+.statsList .label {
+	
+	width: 75%;
+}
+
+.statsList .value {
+	
+	width: 100px;
+	text-align: right;
+}
+
+
+/* --------------- News List ----------------- */
+
+.newsItem {
 
 	margin-bottom: 10px;
+	padding: 5px 10px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+
+	background-color: #F0F0FF;
+}
+
+.newsItem > .filter {
+
+	margin-right: 8px;
+	width: 21px;
+	height: 21px;
+
+	border: 1px solid #555;
+	border-radius: 4px;
+	background-color: white;
+	cursor: pointer;
+}
+
+.newsItem > .filter span {
+
+	display: inline-block;
+	width: 15px;
+	height: 15px;
+	margin: 3px;
+	border-radius: 2px;
+}
+
+.newsItem [type=checkbox]:checked + span {
+
+	background-color: #333;
+}
+
+.newsItem > .filter > input {
+
+	display: none;
+}
+
+.newsItem > div {
+
+	display: inline-block;
+}
+
+.newsItem > .headline {
+
+	flex-grow: 1;
+	padding-right: 10px;
+}
+
+.newsItem > .rate {
+
+	flex-shrink: 0;
 }

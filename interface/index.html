@@ -15,7 +15,7 @@
 			</div>
 		</div>
 		<div class="action message"></div>
-		<a class="init button">Initialize</a>
+		<a class="boot button">Initialize</a>
 		<a class="start button">Start</a>
 		<a class="stop button">Stop</a>
 		<a class="reset button">Stop</a>
@@ -67,18 +67,88 @@
 					</li>
 					<li class="option">
 						<span class="label">Refresh rate (s):</span>
-						<input id="dataRate" type="number" name="dataRate">
+						<input id="updatePeriod" type="number" name="updatePeriod">
+					</li>
+					<li class="option">
+						<span class="label">Time window (min):</span>
+						<input id="windowPeriod" type="number" name="windowPeriod">
 					</li>
 				</ul>
 			</div>
 		</div>
-		<div class="data panel box">Data</div>
-		<div class="data panel box">
+		<div class="data box general">
+			<div class="title"><span>General Statistics</span></div>
+			<svg id="generalStatisticsChart" width="978" height="500"></svg>
+			<ul class="statsList">
+				<li>
+					<span class="label">Total tweets examined:</span>
+					<span id="totalNumber" class="value"></span>
+					<span class="unit">&nbsp;tweets</span>
+				</li>
+				<li>
+					<span class="label">Tweets matched with news items:</span>
+					<span id="matchedNumber" class="value"></span>
+					<span class="unit">&nbsp;tweets (</span>
+					<span id="matchedPercent" class="valueExtra"></span>
+					<span class="unitExtra">%)</span>
+				</li>
+				<br>
+				<li>
+					<span class="label">Tweets limited by Twitter cap:</span>
+					<span id="limitedNumber" class="value"></span>
+					<span class="unit">&nbsp;tweets (</span>
+					<span id="limitedPercent" class="valueExtra"></span>
+					<span class="unitExtra">%)</span>
+				</li>
+				<li>
+					<span class="label">Projected total tweets without limits:</span>
+					<span id="totalProjectedNumber" class="value"></span>
+					<span class="unit">&nbsp;tweets</span>
+				</li>
+				<li>
+					<span class="label">Projected matched tweets without limits:</span>
+					<span id="matchedProjectedNumber" class="value"></span>
+					<span class="unit">&nbsp;tweets</span>
+				</li>
+				<br>
+				<li>
+					<span class="label">Current tweet rate:</span>
+					<span id="currentRate" class="value"></span>
+					<span class="unit">&nbsp;tweets/min</span>
+				</li>
+				<li>
+					<span class="label">Matched tweet rate:</span>
+					<span id="matchedRate" class="value"></span>
+					<span class="unit">&nbsp;tweets/min</span>
+				</li>
+				<li>
+					<span class="label">Average tweet rate:</span>
+					<span id="averageRate" class="value"></span>
+					<span class="unit">&nbsp;tweets/min</span>
+				</li>
+				<li>
+					<span class="label">Processing time elapsed:</span>
+					<span id="timeElapsed" class="value"></span>
+					<span class="unit">&nbsp;min,&nbsp;</span>
+					<span id="timeElapsedSeconds" class="valueExtra"></span>
+					<span class="unitExtra">&nbsp;s</span>
+				</li>
+				<br>
+				<li>
+					<span class="label">Number of news items examined:</span>
+					<span id="newsItemsNumber" class="value"></span>
+					<span class="unit">&nbsp;items</span>
+				</li>
+			</ul>
+		</div>
+		<div class="data box newsItemsList">
+			<div class="title"><span>News headlines</span><span>Mentions</span></div>
 			<ul class="news">
 			</ul>
 		</div>
 	</div>
 	<script type="text/javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" src="js/d3.js"></script>
 	<script type="text/javascript" src="js/index.js"></script>
 </body>
 </html>
