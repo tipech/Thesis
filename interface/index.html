@@ -19,6 +19,11 @@
 		<a class="start button">Start</a>
 		<a class="stop button">Stop</a>
 		<a class="reset button">Stop</a>
+		<div class="data button tabControls">
+			<a class="data button generalData">General Data</a>
+			<a class="data button groupData">Feed Group Data</a>
+			<a class="data button newsItemData">News Item Data</a>
+		</div>
 	</div>
 	<div class="content">
 		<div class="error panel box"></div>
@@ -66,19 +71,23 @@
 						<input id="tweetThreshold" type="number" name="tweetThreshold" step="0.05" min="0" max="1">
 					</li>
 					<li class="option">
-						<span class="label">Refresh rate (s):</span>
-						<input id="updatePeriod" type="number" name="updatePeriod">
+						<span class="label">Time window (min):</span>
+						<input id="windowPeriod" type="number" name="windowPeriod" min="1" max="120">
 					</li>
 					<li class="option">
-						<span class="label">Time window (min):</span>
-						<input id="windowPeriod" type="number" name="windowPeriod">
+						<span class="label">Update period (s):</span>
+						<input id="updatePeriod" type="number" name="updatePeriod" min="1" max="60">
+					</li>
+					<li class="option">
+						<span class="label">Refresh period (s):</span>
+						<input id="refreshPeriod" type="number" name="refreshPeriod" step="0.1" min="0.1" max="10">
 					</li>
 				</ul>
 			</div>
 		</div>
 		<div class="data box general">
 			<div class="title"><span>General Statistics</span></div>
-			<svg id="generalStatisticsChart" width="978" height="500"></svg>
+			<div id="generalStatisticsChart" class="chartWrapper"></div>
 			<ul class="statsList">
 				<li>
 					<span class="label">Total tweets examined:</span>
@@ -112,18 +121,13 @@
 				</li>
 				<br>
 				<li>
-					<span class="label">Current tweet rate:</span>
+					<span class="label">Total tweet rate:</span>
 					<span id="currentRate" class="value"></span>
 					<span class="unit">&nbsp;tweets/min</span>
 				</li>
 				<li>
 					<span class="label">Matched tweet rate:</span>
 					<span id="matchedRate" class="value"></span>
-					<span class="unit">&nbsp;tweets/min</span>
-				</li>
-				<li>
-					<span class="label">Average tweet rate:</span>
-					<span id="averageRate" class="value"></span>
 					<span class="unit">&nbsp;tweets/min</span>
 				</li>
 				<li>
@@ -139,11 +143,26 @@
 					<span id="newsItemsNumber" class="value"></span>
 					<span class="unit">&nbsp;items</span>
 				</li>
+				<li>
+					<span class="label">Number of news source groups:</span>
+					<span id="groupsNumber" class="value"></span>
+					<span class="unit">&nbsp;groups</span>
+				</li>
+				<li>
+					<span class="label">Number of RSS feeds examined:</span>
+					<span id="feedsNumber" class="value"></span>
+					<span class="unit">&nbsp;feeds</span>
+				</li>
 			</ul>
 		</div>
-		<div class="data box newsItemsList">
+		<div class="data box groupData">
+			<div class="title"><span>News Source Groups</span><span>Mentions</span></div>
+			<ul class="groupsList">
+			</ul>
+		</div>
+		<div class="data box newsData">
 			<div class="title"><span>News headlines</span><span>Mentions</span></div>
-			<ul class="news">
+			<ul class="newsItemsList">
 			</ul>
 		</div>
 	</div>

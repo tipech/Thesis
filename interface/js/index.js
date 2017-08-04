@@ -2,17 +2,29 @@ $( document ).ready( function() {
 
 	var waitPeriod = 2; // s, time to wait for state changes
 	var refreshPeriod = 1; // s, time to wait between data retrieval (1Hz)
-	var rateThreshold = 1000; // The tweet rate where we hit the twitter cap and results may not be accurate
 
-	var lastUpdateTime = 0;
-
+	var smoothChartRefresh = false;
+	var logScaleCharts = true;
+	
 	var timer;
+	var lastUpdateTime = 0;
 	var settings = [];
 	var dataset = {
-		'general':{'total':[], 'matched':[], 'limited':[], 'startTime':0, 'tweetRate':0},
+		'general':{'total':[], 'matched':[], 'limited':[], 'tweetRate':[], 'matchedRate':[], 'startTime':0},
 		'groups':[],
-		'newsItems':[]
+		'newsItems':[],
+		'feedsNumber':0
 	};
+	var chartList = {
+		'general':{
+			'wrapperId':"#generalStatisticsChart",
+			'domainX':0,
+			'domainY':4000,
+			'xScale':{},
+			'yScale':{},
+			'type': "area"
+		}
+	}
 
 	// ============ Helper Functions ============
 
@@ -147,7 +159,7 @@ $( document ).ready( function() {
 				$( ".action.message" ).fadeIn();
 
 				$( ".spinner .ring" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
-				$( ".spinner .circle" ).css( { "background-color": "#B7F", "width": "50px", "height": "50px", "border-radius": "25px" } );
+				$( ".spinner .circle" ).css( { "background-color": "#FAA43A", "width": "50px", "height": "50px", "border-radius": "25px" } );
 				$( ".spinner .circle .status" ).stop().hide();
 
 				$( ".help, .data, .error, .info" ).hide();
@@ -166,7 +178,9 @@ $( document ).ready( function() {
 				$( ".spinner .circle .status" ).css( { "color": "white" } );
 
 				$( ".help, .control, .error, .info" ).hide();
-				$( ".data" ).show();
+				$( ".data" ).fadeIn();
+
+				$( ".tabControls .generalData" ).click(); 
 				break;
 
 			case "done":
@@ -334,7 +348,7 @@ $( document ).ready( function() {
 
 	function getSettings() {
 
-		var newSettings = { "date": "", "updatePeriod": 0, "newsThreshold": 0, "tweetThreshold": 0 };
+		var newSettings = { "date": "", "updatePeriod": 0, "updatePeriod": 0, "newsThreshold": 0, "tweetThreshold": 0 };
 
 
 		newSettings.date = $( ".date :selected" ).val();
@@ -346,6 +360,16 @@ $( document ).ready( function() {
 
 		} else {
 			flashError( $( "#updatePeriod" ) );
+			return false;
+		}
+
+		var refreshPeriod = $( "#refreshPeriod" ).val();
+		if ( refreshPeriod != "" && typeof parseInt( refreshPeriod ) == "number" ) {
+
+			newSettings.refreshPeriod = refreshPeriod;
+
+		} else {
+			flashError( $( "#refreshPeriod" ) );
 			return false;
 		}
 
@@ -396,6 +420,7 @@ $( document ).ready( function() {
 		$( ".date option[value='today']").prop('selected', true);
 
 		$( "#updatePeriod" ).val( "5" );
+		$( "#refreshPeriod" ).val( "1" );
 		$( "#windowPeriod" ).val( "10" );
 		$( "#newsThreshold" ).val( "0.3" );
 		$( "#tweetThreshold" ).val( "0.1" );
@@ -403,40 +428,59 @@ $( document ).ready( function() {
 
 	// ------------ Data Management -------------
 
-	function showNewsItems(newsItemsList) {
+	function toggleChartZoom(chart){
+
+		chart.yScale.exponent([ logScaleCharts ? 0.5 : 1 ]);
+
+		var yAxis = d3.axisRight(chart.yScale)
+			.ticks(12)
+			.tickFormat(function(d){ 
+				if (d < 0 || d == chart.domainY){ 
+					return "";
+				} else {
+					return d >= 1000 ? (d/1000).toFixed(1) + "k" : d;
+				}
+			})
 		
-		$(".news").empty();
-
-		newsItemsList.forEach( function(newsItem){
-
-			newsElement = $('<li class="newsItem box" id=newsItem_"' + newsItem.id + '"></li>');
-			newsElement.append('<label class="filter"><input type="checkbox" checked="checked"><span></span><label>');
-			newsElement.append('<div class="headline">' + newsItem.headline.replace(/\|&\|/g, "<br>") + '</div>');
-			newsElement.append('<div class="rate">' + "0" + '</div>');
-			newsElement.append('<div class="rateLabel">' + "&nbsp;tw/min" + '</div>');
-
-
-			// make text color white for dark background colors
-			if( parseInt(newsItem.color.substring(1,3), 16) 
-				+ parseInt(newsItem.color.substring(3,5), 16) 
-				+ parseInt(newsItem.color.substring(5), 16) < 360) {
-
-				var textColor = "white";
-			} else {
-				var textColor = "black";
-			}
-			newsElement.css( {"background-color": newsItem.color, "color": textColor } ); 
-
-
-			$(".news").append(newsElement);
-		});
+		d3.select(chart.wrapperId).select("svg")
+			.select(".y.axis").call(yAxis.scale(chart.yScale));
 	}
-
 
 	// ============ Action Handlers =============
 
 	$( ".boot.button" ).click( boot );
 	$( ".start.button" ).click( start );
+
+	$( ".tabControls .generalData" ).click(function(){ 
+
+		$( ".content .data.general" ).show()
+		$( ".content .data.groupData" ).hide()
+		$( ".content .data.newsData" ).hide()
+	})
+	$( ".tabControls .groupData" ).click(function(){ 
+
+		$( ".content .data.general" ).hide()
+		$( ".content .data.groupData" ).show()
+		$( ".content .data.newsData" ).hide()
+	})
+	$( ".tabControls .newsItemData" ).click(function(){ 
+
+		$( ".content .data.general" ).hide()
+		$( ".content .data.groupData" ).hide()
+		$( ".content .data.newsData" ).show()
+	})
+
+	$(window).on("keyup", function(e){ 
+		if(e.which == 49){ // toggle log - linear chart scale on "1"
+
+			logScaleCharts = !logScaleCharts;
+
+			toggleChartZoom(chartList.general)
+
+		} else if(e.which == 50){ // toggle smooth - chunky charts
+			smoothChartRefresh = !smoothChartRefresh;
+		}
+	})
 
 	// ------------------------------------------
 
@@ -590,6 +634,133 @@ $( document ).ready( function() {
 
 			settings = data.settings;
 
+			// ---------------- General Statistics ----------------
+
+			// store starting time
+			dataset.general.startTime = data.statuses[0][4];
+
+			// prepare data buffers according to window size, "recent" data are in 1/20th of window
+			var bufferSize = Math.floor(settings.windowPeriod / settings.refreshPeriod);
+			var shortWindow = Math.floor(0.05 * settings.windowPeriod / settings.refreshPeriod);
+
+			dataset.general.total = new Array(bufferSize).fill(0);
+			dataset.general.matched = new Array(bufferSize).fill(0);
+			dataset.general.limited = new Array(bufferSize).fill(0);
+
+			// calculate final totals
+			for (var i = 0; i < data.statuses.length; i++) {
+				dataset.general.total[0] += data.statuses[i][1];
+				dataset.general.matched[0] += data.statuses[i][2];
+				dataset.general.limited[0] += data.statuses[i][3];
+			}
+
+			// populate the buffers
+			for (var i = 1; i < bufferSize/settings.updatePeriod; i++) {
+
+				var bufferStep = i*settings.updatePeriod;
+				if(data.statuses.length-i < 0){
+
+					dataset.general.total[bufferStep] = 0;
+					dataset.general.matched[bufferStep] = 0;
+					dataset.general.total[bufferStep] = 0;
+
+				} else if(data.statuses.length-i > 0){
+					// store the true value at the appropriate position
+					dataset.general.total[bufferStep] = dataset.general.total[bufferStep - settings.updatePeriod]
+						- data.statuses[data.statuses.length - i][1];
+					dataset.general.matched[bufferStep] = dataset.general.matched[bufferStep - settings.updatePeriod]
+						- data.statuses[data.statuses.length - i][2];
+					dataset.general.limited[bufferStep] = dataset.general.limited[bufferStep - settings.updatePeriod]
+						- data.statuses[data.statuses.length - i][3];
+
+					// interpolate the rest of the values
+					for (var j = 1; j < settings.updatePeriod; j++) {
+
+						// interpolation weights
+						var wNew = 1 - j/settings.updatePeriod;
+						var wOld = j/settings.updatePeriod;
+
+						// produce interpolated value
+						dataset.general.total[bufferStep-j] = 
+							wNew * dataset.general.total[bufferStep]
+							+ wOld * dataset.general.total[bufferStep - settings.updatePeriod]
+						dataset.general.matched[bufferStep-j] = 
+							wNew * dataset.general.matched[bufferStep]
+							+ wOld * dataset.general.matched[bufferStep - settings.updatePeriod]
+						dataset.general.limited[bufferStep-j] = 
+							wNew * dataset.general.limited[bufferStep]
+							+ wOld * dataset.general.limited[bufferStep - settings.updatePeriod]
+					}
+				} else { // we are at first status
+
+					dataset.general.total[bufferStep] = data.statuses[0][1];
+					dataset.general.matched[bufferStep] = data.statuses[0][2];
+					dataset.general.limited[bufferStep] = data.statuses[0][3];
+
+					// interpolate first values
+					for (var j = 1; j < settings.updatePeriod; j++) {
+
+						// interpolation weights, old value is 0 anyway
+						var wNew = 1 - j/settings.updatePeriod;
+
+						// produce interpolated value
+						dataset.general.total[bufferStep - j] = wNew * dataset.general.total[bufferStep];
+						dataset.general.matched[bufferStep - j] = wNew * dataset.general.matched[bufferStep];
+						dataset.general.limited[bufferStep - j] = wNew * dataset.general.limited[bufferStep];
+					}
+				}
+			}
+
+			// make sure last positions of buffers are populated
+			for (var i = 1; i < settings.updatePeriod; i++) {
+
+				dataset.general.total[bufferSize - i] = dataset.general.total[bufferSize - settings.updatePeriod];
+				dataset.general.matched[bufferSize - i] = dataset.general.total[bufferSize - settings.updatePeriod];
+				dataset.general.total[bufferSize - i] = dataset.general.total[bufferSize - settings.updatePeriod]; 
+			}
+
+			// prepare the rate buffers, sized for the entire window
+			for (var i = 0; i < bufferSize; i++) {
+
+
+				if(shortWindow + parseInt(settings.updatePeriod) + i >= bufferSize){
+
+					dataset.general.tweetRate[i] = dataset.general.tweetRate[bufferSize - shortWindow- parseInt(settings.updatePeriod) -1];
+					dataset.general.matchedRate[i] = dataset.general.matchedRate[bufferSize - shortWindow- parseInt(settings.updatePeriod) -1];
+				
+				} else {
+
+					dataset.general.tweetRate[i] = 60*(dataset.general.total[i] - dataset.general.total[shortWindow + i])/
+						(shortWindow*settings.refreshPeriod)						
+					dataset.general.matchedRate[i] = 60*(dataset.general.matched[i] - dataset.general.matched[shortWindow + i])/
+						(shortWindow*settings.refreshPeriod)
+				}
+			}
+
+
+			// show the general statistics chart
+			chartList.general.domainX = (settings.windowPeriod/settings.refreshPeriod);
+			initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total tweets", "Matched tweets"]);
+
+
+			// ---------------- Group Statistics ----------------
+
+			// process groups into dataset
+			for (var i = 0; i < data.groups.length; i++) {
+				item = data.groups[i];
+				dataset.groups[i] = {'id':item[0], 'name':item[1], 'color':mergeColors(item[2]),'rate':[]}
+				for (var j = 0; j < settings.updatePeriod; j++) {
+					dataset.groups[i].rate[j] = 0;
+				}
+			}
+
+			// and show them
+			showGroups(dataset.groups);
+
+			dataset.feedsNumber = data.feedsCount;
+
+			// ---------------- News Items Statistics ----------------
+
 			// process news items into dataset
 			for (var i = 0; i < data.newsItems.length; i++) {
 				item = data.newsItems[i];
@@ -602,102 +773,140 @@ $( document ).ready( function() {
 			// and show them
 			showNewsItems(dataset.newsItems);
 
-
-			// prepare the general statistics data buffers for "recent" data (1/20th the window)
-			bufferSize = Math.floor(0.05 * settings.windowPeriod / refreshPeriod);
-			dataset.general.total = new Array(bufferSize).fill(0);
-			dataset.general.matched = new Array(bufferSize).fill(0);
-			dataset.general.limited = new Array(bufferSize).fill(0);
-
-			// calculate general statistics totals
-			for (var i = 0; i < data.statuses.length; i++) {
-				dataset.general.total[0] += data.statuses[i][1];
-				dataset.general.matched[0] += data.statuses[i][2];
-				dataset.general.limited[0] += data.statuses[i][3];
-			}
-
-			// fill the buffers with the last value
-			for (var i = 1; i < bufferSize; i++) {
-				dataset.general.total[i] = dataset.general.total[0];
-				dataset.general.matched[i] = dataset.general.matched[0];
-				dataset.general.limited[i] = dataset.general.limited[0];
-			}
-
-
-			// store starting time
-			dataset.general.startTime = data.statuses[0][4];
-
-
-			// calculate average rate
-			// var timeElapsed	  = Math.floor(Date.now() / 1000) - dataset.general.startTime;
-			// var averageRate	  = (dataset.general.total / timeElapsed).toFixed(2);
-
 			refreshData();
 		});
 	}
 
+
+	function initializeChart( chart, labelX, labelY, columnNames ){
+
+		var emptyData = new Array(chart.domainX).fill(0);
+
+		var width = $(chart.wrapperId).width();
+		var height = $(chart.wrapperId).height();
+
+		var zoom = d3.zoom()
+			.scaleExtent([1, 5])
+			.translateExtent([[0, 0], [width, height]])
+			.on("zoom", function(){
+				graph.selectAll(".graphLine").attr("transform", d3.event.transform);
+				gX.call(xAxis.scale(d3.event.transform.rescaleX(chart.xScale)));
+				gY.call(yAxis.scale(d3.event.transform.rescaleY(chart.yScale)));
+			})
+
+		graph = d3.select(chart.wrapperId).append("svg")
+			.attr("width", "100%").attr("height", "100%")
+
+		chart.xScale = d3.scaleLinear().domain([chart.domainX, 0]).range([-5, width]); 
+		chart.yScale = d3.scalePow().domain([chart.domainY, 0]).range([0, height-41]);
+		chart.yScale.exponent([ logScaleCharts ? 0.5 : 1 ]);
+
+		var xAxis = d3.axisBottom(chart.xScale)
+			.ticks(10)
+			.tickFormat(function(d){
+				if(d == 0 || d == chart.domainX){
+					return "";
+				}
+				var time = Math.floor(d/60)%3600 + "m";
+				if(d%60 != 0 ){
+					time += ", " + d%60 + "s"
+				}
+				if(d>3600){
+					time = Math.floor(d/3600) + "h, " + time;
+				}
+				return time;
+			})
+			.tickSize(2*height - 20)
+			.tickPadding(8 - height);
+
+
+		var yAxis = d3.axisRight(chart.yScale)
+			.ticks(12)
+			.tickFormat(function(d){ 
+				if (d < 0 || d == chart.domainY){ 
+					return "";
+				} else {
+					return d >= 1000 ? (d/1000).toFixed(1) + "k" : d;
+				}
+			})
+
+
+		// legend and text labels for the axes, animated chart is wonky so we add them outside the svd
+		var labelXDiv = $("<div></div>")
+			.addClass("axisLabel")
+			.css({ "transform":"translate( -30px, -20px)" })
+			.text(labelX);
+		$(chart.wrapperId).append(labelXDiv);
+
+		var labelYDiv = $("<div></div>")
+			.addClass("axisLabel")
+			.css({ "transform":"translate( " + (width/2 -6) + "px, " + (-height/2 -30) + "px) rotate(90deg)" })
+			.text(labelY);
+		$(chart.wrapperId).append(labelYDiv);
+
+		var legend = $("<ul></ul>")
+			.addClass("legend")
+			.css({ "transform":"translate( 10px, " + (-height ) + "px)" })
+		$(chart.wrapperId).append(legend);
+
+		// display one shape per data column by appending it to a path element
+		for (var i = 0; i < columnNames.length; i++) {
+
+			graph.append("path")
+				.attr("class", "graphLine line_" + i) // Assign classes for styling 
+
+			var legendItem = $("<li></li>")
+				.addClass("legend_" + i)
+			legendItem.append("<span class='legendText'>" + columnNames[i] + "</span><span class='legendColor'></span>")
+
+			legend.append(legendItem)
+		}
+
+		// display the axes
+		var gX = graph.append("g")
+			.attr("class", "x axis")
+			.attr("transform","translate( 0," + (-20) + ")")
+
+		var gY = graph.append("g")
+			.attr("class", "y axis")
+			.attr("transform","translate(" + (width -40) + ")")
+
+
+		// draw the actual axes and rectangles to hide everything behind them
+		gX.append("rect")
+			.attr("class", "x axisBgRect statics")
+			.attr("width", width)
+			.attr("transform","translate( 0, " + (height-20) + ")")
+			.attr("height",40);
+
+		gX.append("rect")
+			.attr("class", "x axisRect statics")
+			.attr("width", width-36)
+			.attr("transform","translate( 0, " + (height-20) + ")")
+			.attr("height",1);
+
+		gY.append("rect")
+			.attr("class", "y axisBgRect statics")
+			.attr("width", 51)
+			.attr("height",height)
+			.attr("transform","translate(-4)")
+
+		gY.append("rect")
+			.attr("class", "y axisRect statics")
+			.attr("width", 1)
+			.attr("height",height-40)
+			.attr("transform","translate(-4)")
+
+		gX.call(xAxis); // Create the X axis markers
+		gY.call(yAxis); // Create the Y axis markers
+
+		graph.call(zoom);
+	}
+
+
 	function refreshData(){
 
 		var timeNow = Math.floor(Date.now() / 1000);
-
-		// calculate what part of the refresh cycle we are in
-		var refreshIndex = ((timeNow - lastUpdateTime - 1) % settings.updatePeriod);
-
-		// buffers are separated into blocks, corresponding to true values plus interpolations
-		var bufferBlockSize = settings.updatePeriod / refreshPeriod;
-		// "first" place in latest buffer for this refresh
-		var bufferPointer = settings.updatePeriod / refreshPeriod - refreshIndex -1;
-		// this contains all "recent" data (1/20th of the window) minus one update
-		var shortWindow = Math.floor((0.05 * settings.windowPeriod  - settings.updatePeriod ) / refreshPeriod);
-
-
-
-		// create a new dataset to hold linear interpolation values
-		var linearSet = {
-			'general':{
-				'total':[dataset.general.total[bufferPointer]],
-				'matched':[dataset.general.matched[bufferPointer]],
-				'limited':[dataset.general.limited[bufferPointer]],
-				'startTime':dataset.general.startTime,
-				'tweetRate':(dataset.general.total[bufferPointer] - dataset.general.total[shortWindow+bufferPointer])/
-					(shortWindow*refreshPeriod)
-			},
-			'groups':dataset.groups,
-			'newsItems':dataset.newsItems
-		};
-
-		// create a new dataset to hold smoothed values
-		var smoothedSet = {
-			'general':{
-				'total':[0],
-				'matched':[0],
-				'limited':[0],
-				'startTime':dataset.general.startTime,
-				'tweetRate':0
-			},
-			'groups':dataset.groups,
-			'newsItems':dataset.newsItems
-		};
-
-		// For data smoothing, we use a weighted moving average algorithm, looping through data from recent to old
-		for (var i = 0; i < shortWindow; i++) {
-
-			// WMA multiplacation factor:
-			//  - inversly proportionate to the age of a data point
-			//  - normalized so that the sum of factors is 1
-			var wmaFactor = 2 * (1 - i/shortWindow) / (shortWindow + 1);
-
-			smoothedSet.general.total[0] += dataset.general.total[bufferPointer+i] * wmaFactor;
-			smoothedSet.general.matched[0] += dataset.general.matched[bufferPointer+i] * wmaFactor;
-			smoothedSet.general.limited[0] += dataset.general.limited[bufferPointer+i] * wmaFactor;
-		}
-
-		// Print deviation of smoothing (usually within 0.5%-1.5%)
-		// console.log(100*(dataset.general.total[0] - smoothedSet.general.total[0]) / dataset.general.total[0]);
-
-
-		showUpdatedData(linearSet, smoothedSet);
-
 
 		// check if it's time to update
 		if( timeNow - lastUpdateTime >= settings.updatePeriod ){
@@ -706,7 +915,60 @@ $( document ).ready( function() {
 			updateData();
 		}
 
-		timer = setTimeout( refreshData, refreshPeriod * 1000 );
+		// continue loop
+		timer = setTimeout( refreshData, settings.refreshPeriod * 1000 );
+
+
+
+
+		// calculate what part of the refresh cycle we are in
+		var refreshIndex = ((timeNow - lastUpdateTime + parseInt(settings.updatePeriod) -1) % settings.updatePeriod);
+
+		// buffers are separated into blocks, corresponding to true values plus interpolations
+		var bufferBlockSize = settings.updatePeriod / settings.refreshPeriod;
+		// "first" place in latest buffer for this refresh
+		var bufferPointer = settings.updatePeriod / settings.refreshPeriod - refreshIndex -1;
+		// this contains all "recent" data (1/20th of the window) minus one update
+		var shortWindow = Math.floor(0.05 * settings.windowPeriod / settings.refreshPeriod);
+
+		// calculate and store the tweet rates
+		dataset.general.tweetRate.unshift(
+				60*(dataset.general.total[bufferPointer] - dataset.general.total[shortWindow+bufferPointer])/
+				(shortWindow*settings.refreshPeriod)
+			);
+		dataset.general.tweetRate.pop();
+
+		dataset.general.matchedRate.unshift(
+				60*(dataset.general.matched[bufferPointer] - dataset.general.matched[shortWindow+bufferPointer])/
+				(shortWindow*settings.refreshPeriod)
+			);
+		dataset.general.matchedRate.pop();
+
+
+		// calculate and show values
+		var matchedPercent   = 100 * dataset.general.matched[bufferPointer] / dataset.general.total[bufferPointer];
+		var totalProjected   = dataset.general.limited[bufferPointer] + dataset.general.total[bufferPointer];
+		var limitedPercent   = 100 * dataset.general.limited[bufferPointer] / totalProjected;
+		var matchedProjected = 100 * dataset.general.matched[bufferPointer] / limitedPercent;
+		var timeElapsed	  = Math.floor(Date.now() / 1000) - dataset.general.startTime;
+
+		showGeneralStatistics(
+				dataset.general.total[bufferPointer],
+				dataset.general.matched[bufferPointer],
+				isNaN(matchedPercent) ? bufferPointer: matchedPercent,
+				dataset.general.limited[bufferPointer],
+				isNaN(limitedPercent) ? bufferPointer: limitedPercent,
+				isNaN(totalProjected) ? bufferPointer: totalProjected,
+				isNaN(matchedProjected) ? bufferPointer: matchedProjected,
+				dataset.general.tweetRate[0],
+				dataset.general.matchedRate[0],
+				timeElapsed,
+				dataset.newsItems.length,
+				dataset.groups.length,
+				dataset.feedsNumber
+			);
+
+		refreshChart(chartList.general, [dataset.general.tweetRate, dataset.general.matchedRate])
 	}
 
 	function updateData() {
@@ -723,7 +985,7 @@ $( document ).ready( function() {
 			}
 
 			// buffers are separated into blocks, corresponding to true values plus interpolations
-			var bufferBlockSize = settings.updatePeriod / refreshPeriod;
+			var bufferBlockSize = settings.updatePeriod / settings.refreshPeriod;
 
 			// Produce intepolated values between new and old true ones
 			for (var i = 1; i <= bufferBlockSize; i++) {
@@ -734,58 +996,30 @@ $( document ).ready( function() {
 
 				// Add interpolated general statistics to the dataset
 				dataset.general.total.unshift(
-						wNew*(data.statuses[data.statuses.length-1][1] + dataset.general.total[i])
-						+ wOld*dataset.general.total[i]
+						wNew*(data.statuses[data.statuses.length-1][1] + dataset.general.total[i-1])
+						+ wOld*dataset.general.total[i-1]
 					);
 				dataset.general.total.pop();
 
 				dataset.general.matched.unshift(
-						wNew*(data.statuses[data.statuses.length-1][2] + dataset.general.matched[i])
-						+ wOld*dataset.general.matched[i]
+						wNew*(data.statuses[data.statuses.length-1][2] + dataset.general.matched[i-1])
+						+ wOld*dataset.general.matched[i-1]
 					);
 				dataset.general.matched.pop();
 
 				dataset.general.limited.unshift(
 						wNew*(data.statuses[data.statuses.length-1][3] + dataset.general.limited[i])
-						+ wOld*dataset.general.limited[i]
+						+ wOld*dataset.general.limited[i-1]
 					);
 				dataset.general.limited.pop();
 			}
 		} );
 	}
 
-	function showUpdatedData(linearSet, smoothedSet) {
-
-		var matchedPercent   = 100 * linearSet.general.matched[0] / linearSet.general.total[0];
-		var totalProjected   = linearSet.general.limited[0] + linearSet.general.total[0];
-		var limitedPercent   = 100 * linearSet.general.limited[0] / totalProjected;
-		var matchedProjected = 100 * linearSet.general.matched[0] / limitedPercent;
-		var timeElapsed	  = Math.floor(Date.now() / 1000) - linearSet.general.startTime;
-		var matchedRate	  = linearSet.general.tweetRate * matchedPercent / 100;
-		var averageRate	  = linearSet.general.total[0] / timeElapsed;
-
-		showGeneralStatistics(
-				linearSet.general.total[0],
-				linearSet.general.matched[0],
-				isNaN(matchedPercent) ? 0: matchedPercent,
-				linearSet.general.limited[0],
-				isNaN(limitedPercent) ? 0: limitedPercent,
-				isNaN(totalProjected) ? 0: totalProjected,
-				isNaN(matchedProjected) ? 0: matchedProjected,
-				linearSet.newsItems.length,
-				linearSet.general.tweetRate,
-				matchedRate,
-				averageRate,
-				timeElapsed
-			);
-
-		drawGeneralStatisticsChart();
-	}
-
 
 	function showGeneralStatistics( 
 		total, matched, matchedPercent, limited, limitedPercent, totalProjected, matchedProjected, 
-		newsCount, currentRate, matchedRate, averageRate, timeElapsed ) {
+		currentRate, matchedRate, timeElapsed, newsCount, groupsCount, feedsCount ) {
 
 		$("#totalNumber").text(total.toFixed(0));
 		$("#matchedNumber").text(matched.toFixed(0));
@@ -795,9 +1029,8 @@ $( document ).ready( function() {
 		$("#totalProjectedNumber").text(totalProjected.toFixed(0));
 		$("#matchedProjectedNumber").text(matchedProjected.toFixed(0));
 
-		$("#currentRate").text((60 * currentRate).toFixed(2));
-		$("#matchedRate").text((60 * matchedRate).toFixed(2));
-		$("#averageRate").text((60 * averageRate).toFixed(2));
+		$("#currentRate").text(currentRate.toFixed(2));
+		$("#matchedRate").text(matchedRate.toFixed(2));
 
 		var timeElapsedString = "";
 		if(timeElapsed > 3600){
@@ -809,26 +1042,129 @@ $( document ).ready( function() {
 		$("#timeElapsedSeconds").text(timeElapsed%60);
 
 		$("#newsItemsNumber").text(newsCount);
+		$("#groupsNumber").text(groupsCount);
+		$("#feedsNumber").text(feedsCount);
 
-		$( ".spinner .circle .status" ).text( currentRate.toFixed(2) + " t/s" );
+		$( ".spinner .circle .status" ).text( (currentRate/60).toFixed(2) + " t/s" );
 	}
 
-	function drawGeneralStatisticsChart(){
 
-		// var svg = d3.select("#generalStatisticsChart"),
-		// 	margin = {top: 20, right: 80, bottom: 30, left: 50},
-		// 	width = svg.attr("width") - margin.left - margin.right,
-		// 	height = svg.attr("height") - margin.top - margin.bottom,
-		// 	g = svg.append("g").attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-		// var x = d3.scaleTime().range([0, width]),
-		// 	y = d3.scaleLinear().range([height, 0]),
-		// 	z = d3.scaleOrdinal(d3.schemeCategory10);
-	
+	function showGroups(groupsList) {
 		
+		$(".groupsList").empty();
 
+		groupsList.forEach( function(groupItem){
+
+			groupElement = $('<li class="groupItem box" id=groupItem_"' + groupItem.id + '"></li>');
+			groupElement.append('<div class="name">' + groupItem.name + '</div>');
+			groupElement.append('<div class="rate">' + "0" + '</div>');
+			groupElement.append('<div class="rateLabel">' + "&nbsp;tw/min" + '</div>');
+
+
+			// make text color white for dark background colors
+			if( parseInt(groupItem.color.substring(1,3), 16) 
+				+ parseInt(groupItem.color.substring(3,5), 16) 
+				+ parseInt(groupItem.color.substring(5), 16) < 360) {
+
+				var textColor = "white";
+			} else {
+				var textColor = "black";
+			}
+			groupElement.css( {"background-color": groupItem.color, "color": textColor } ); 
+
+
+			$(".groupsList").append(groupElement);
+		});
 	}
 
+	function showNewsItems(newsItemsList) {
+		
+		$(".newsItemsList").empty();
+
+		newsItemsList.forEach( function(newsItem){
+
+			newsElement = $('<li class="newsItem box" id=newsItem_"' + newsItem.id + '"></li>');
+			newsElement.append('<label class="filter"><input type="checkbox" checked="checked"><span></span><label>');
+			newsElement.append('<div class="headline">' + newsItem.headline.replace(/\|&\|/g, "<br>") + '</div>');
+			newsElement.append('<div class="rate">' + "0" + '</div>');
+			newsElement.append('<div class="rateLabel">' + "&nbsp;tw/min" + '</div>');
+
+
+			// make text color white for dark background colors
+			if( parseInt(newsItem.color.substring(1,3), 16) 
+				+ parseInt(newsItem.color.substring(3,5), 16) 
+				+ parseInt(newsItem.color.substring(5), 16) < 360) {
+
+				var textColor = "white";
+			} else {
+				var textColor = "black";
+			}
+			newsElement.css( {"background-color": newsItem.color, "color": textColor } ); 
+
+
+			$(".newsItemsList").append(newsElement);
+		});
+	}
+
+	function refreshChart(chart, dataColumns){
+
+		var graph = d3.select(chart.wrapperId).select("svg");
+		var path = graph.selectAll(".graphLine").data(dataColumns)
+
+		// create a shape object that represents the SVN shape we're creating
+		if(chart.type == "area"){
+
+			var shape = d3.area()
+				.x(function(d,i) { return chart.xScale(i); })
+				.y1(function(d) { return chart.yScale(d); })
+				.y0(chart.yScale(0))
+				.curve(d3.curveCardinal)
+
+		} else if(chart.type == "line"){
+
+			var shape = d3.line()
+				.x(function(d,i) { return chart.xScale(i); })
+				.y(function(d) { return chart.yScale(d); })
+				.curve(d3.curveCardinal)
+		}
+
+		var scale = 1/d3.zoomTransform(graph.node()).k;
+		var offset1 = chart.xScale(chart.domainX + 24*scale*scale) * d3.zoomTransform(graph.node()).k;
+		var offset2 = chart.xScale(chart.domainX + 1 + 24*scale*scale) * d3.zoomTransform(graph.node()).k;
+
+		// Non continuous animated graph
+		if(!smoothChartRefresh){
+
+			graph.attr("transform", "translate(" + offset1 + ")") 	// move the whole svg left to bring out the line
+			graph.selectAll("text, .statics").attr("x", -offset1 )	// put statics back where they were, relatively
+			
+			path.attr("d", shape); // update values directly
+			return true;
+		}
+
+		// We want to show a continuous animated graph, but zoom functionality uses translate()
+		// Therefore, we have only one logical option: move the entire graph and animate it
+		// Elements that need to remain static (text and axes) are animated in reverse
+
+		graph.attr("transform", "translate(" + offset1 + ")") 	// set the transform to right, hide the new value
+		var statics = graph.selectAll("text, .statics")			// put statics back where they were, relatively
+			.attr("x", -offset1 ) 
+
+
+		path.attr("d", shape) 				// apply the new data values
+
+		graph
+			.transition() 					// start a transition to bring the new value into view
+			.ease(d3.easeLinear)
+			.duration(980 * settings.refreshPeriod) 	// continual slide, refreshPeriod (in ms) minus 2% for animation delay
+			.attr("transform", "translate(" + offset2 + ")"); // animate slide back left, reveal the new value
+
+		statics
+			.transition() 					// start the reverse transition to keep statics in their positions
+			.ease(d3.easeLinear)
+			.duration(980 * settings.refreshPeriod) 	// continual slide, refreshPeriod (in ms) minus 2% for animation delay
+			.attr("x", -offset2 ); 			// animate slide back right, hold your ground
+	}
 
 	// =============== Page Load ================
 

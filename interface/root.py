@@ -88,9 +88,13 @@ def getStatus():
 @get('/init')
 def initializeData():
 
-	newsItems = selectNewsItemsWithGroups()
-
-	return json.dumps({'newsItems':newsItems, 'statuses':selectAll("status"), 'settings': status['settings']})
+	return json.dumps({
+			'groups':selectAll("groups"),
+			'newsItems':selectNewsItemsWithGroups(),
+			'feedsCount':selectFeedsCount(),
+			'statuses':selectAll("status"),
+			'settings': status['settings']
+		})
 
 
 @get('/data')
@@ -132,6 +136,16 @@ def selectStatusesInWindow(window):
 
 	return result
 
+def selectFeedsCount():
+	
+	cursor = dbConnection.cursor()
+	cursor.execute("SELECT count(*) FROM feeds")
+	result = cursor.fetchone()
+	cursor.close()
+
+	print result[0]
+
+	return result[0]
 
 def selectAll( table ):
 	
@@ -223,15 +237,16 @@ def error404(error):
 # Test route
 @get('/test')
 def test():
-	print status['settings']
 	cursor = dbConnection.cursor()
-	cursor.execute("SELECT * FROM status WHERE time > (SELECT time FROM status ORDER BY time DESC LIMIT 1) - " 
-		+ str(status['settings']['windowPeriod']))
-	result = cursor.fetchall()
+	cursor.execute("SELECT count(*) FROM feeds")
+	result = cursor.fetchone()
 	cursor.close()
 
+	print result[0]
 
 
-	return json.dumps(result, indent=4).replace("\n","<br>").replace(" ","&nbsp;")
+
+
+	return ""
 
 run(host='localhost', port=8080, debug=True, reloader=True)

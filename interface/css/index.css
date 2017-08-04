@@ -206,7 +206,7 @@ ul {
 .info.box {
 
 	display: none;
-	background-color: #8D8;
+	background-color: #FAB45A;
 }
 
 
@@ -464,9 +464,32 @@ ul {
 
 /* ============== Data Content =============== */
 
+.sidebar .data.tabControls {
+
+	position: absolute;
+	width: 140px;
+	height: 236px;
+
+	display: flex;
+	flex-flow: column;
+	align-items: center;
+
+	background-color: #444;
+	transform: translate(0, 200px);
+	cursor: default;
+}
+
+.data.tabControls > a {
+
+	background-color: #EEE;
+	width: 100px;
+
+	cursor: pointer;
+}
+
 .data > .title {
 
-	margin-bottom: 25px;
+	margin-bottom: 20px;
 
 	display: flex;
 	justify-content: space-between;
@@ -475,11 +498,83 @@ ul {
 	font-size: larger;
 }
 
+.chartWrapper line, .chartWrapper .domain{ /* axes etc */
+
+	display: none;
+}
+
+.chartWrapper .axisRect {
+
+	fill: black;
+}
+
+.chartWrapper .axisBgRect {
+
+	fill: white;
+}
+
+.chartWrapper .axisLabel {
+
+	position: relative;
+	width: 40%;
+	margin: auto;
+	text-align: center;
+}
+
+.chartWrapper .legend {
+
+	position: relative;
+	width: 20%;
+	padding: 4px 8px; 
+
+	background-color: white;
+	border: 1px solid #4D4D4D;
+}
+
+.chartWrapper .legendColor {
+
+	float: right;
+	display: inline-block;
+	width: 12px;
+	height: 12px;
+	margin: 2px;
+	border: 1px solid #4D4D4D;
+}
+
 /* ---------- General Statistics ------------- */
 
-svg {
-	/*border: 1px solid #444;*/
-	margin-bottom: 25px;
+
+#generalStatisticsChart {
+
+	margin: 0 50px 20px;
+	width: 880px;
+	height: 400px;
+	overflow: hidden;
+}
+
+#generalStatisticsChart .graphLine.line_0{
+
+    fill: #EEDF4F;
+    stroke: #EEDF6F;
+    stroke-width: 1;
+}
+
+
+#generalStatisticsChart .graphLine.line_1{
+
+    fill: #60BD68;
+    stroke: #60BD68;
+    stroke-width: 1;
+}
+
+#generalStatisticsChart .legend_0 .legendColor {
+
+	background-color: #EEDF4F;
+}
+
+#generalStatisticsChart .legend_1 .legendColor {
+
+	background-color: #60BD68;
 }
 
 .statsList > li {
@@ -504,15 +599,36 @@ svg {
 
 /* --------------- News List ----------------- */
 
-.newsItem {
+.groupItem, .newsItem {
 
 	margin-bottom: 10px;
-	padding: 5px 10px;
+	padding: 15px 10px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 
 	background-color: #F0F0FF;
+}
+
+.newsItem {
+
+	padding: 5px 10px;
+}
+
+.groupItem > div, .newsItem > div {
+
+	display: inline-block;
+}
+
+.groupItem > .name, .newsItem > .headline {
+
+	flex-grow: 1;
+	padding-right: 10px;
+}
+
+.groupItem > .rate, .newsItem > .rate {
+
+	flex-shrink: 0;
 }
 
 .newsItem > .filter {
@@ -544,20 +660,4 @@ svg {
 .newsItem > .filter > input {
 
 	display: none;
-}
-
-.newsItem > div {
-
-	display: inline-block;
-}
-
-.newsItem > .headline {
-
-	flex-grow: 1;
-	padding-right: 10px;
-}
-
-.newsItem > .rate {
-
-	flex-shrink: 0;
 }
