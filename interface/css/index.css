@@ -552,31 +552,6 @@ ul {
 	overflow: hidden;
 }
 
-#generalStatisticsChart .graphLine.line_0{
-
-    fill: #EEDF4F;
-    stroke: #EEDF6F;
-    stroke-width: 1;
-}
-
-
-#generalStatisticsChart .graphLine.line_1{
-
-    fill: #60BD68;
-    stroke: #60BD68;
-    stroke-width: 1;
-}
-
-#generalStatisticsChart .legend_0 .legendColor {
-
-	background-color: #EEDF4F;
-}
-
-#generalStatisticsChart .legend_1 .legendColor {
-
-	background-color: #60BD68;
-}
-
 .statsList > li {
 
 	display: flex;
@@ -598,6 +573,15 @@ ul {
 
 
 /* --------------- News List ----------------- */
+
+
+#newsItemStatisticsChart {
+
+	margin: 0 50px 20px;
+	width: 880px;
+	height: 400px;
+	overflow: hidden;
+}
 
 .groupItem, .newsItem {
 
@@ -626,14 +610,20 @@ ul {
 	padding-right: 10px;
 }
 
-.groupItem > .rate, .newsItem > .rate {
+.groupItem > .data, .newsItem > .data {
 
 	flex-shrink: 0;
 }
 
+.groupItem > .data > span, .newsItem > .data > span {
+
+	display: block;
+	text-align: right;
+}
+
 .newsItem > .filter {
 
-	margin-right: 8px;
+	margin: 0 8px;
 	width: 21px;
 	height: 21px;
 
@@ -652,9 +642,9 @@ ul {
 	border-radius: 2px;
 }
 
-.newsItem [type=checkbox]:checked + span {
+.newsItem [type=checkbox]:not(:checked) + span {
 
-	background-color: #333;
+	visibility: hidden;
 }
 
 .newsItem > .filter > input {

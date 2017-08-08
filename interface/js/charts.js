@@ -1,7 +1,7 @@
 // This file contains functions for handling charts and graphs
 
 
-function initializeChart( chart, labelX, labelY, columnNames ){
+function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 
 	var emptyData = new Array(chart.domainX).fill(0);
 
@@ -12,7 +12,7 @@ function initializeChart( chart, labelX, labelY, columnNames ){
 		.scaleExtent([1, 5])
 		.translateExtent([[0, 0], [width, height]])
 		.on("zoom", function(){
-			graph.selectAll(".graphLine").attr("transform", d3.event.transform);
+			d3.select(chart.wrapperId).selectAll(".graphLine").attr("transform", d3.event.transform);
 			gX.call(xAxis.scale(d3.event.transform.rescaleX(chart.xScale)));
 			gY.call(yAxis.scale(d3.event.transform.rescaleY(chart.yScale)));
 		})
@@ -75,12 +75,26 @@ function initializeChart( chart, labelX, labelY, columnNames ){
 	// display one shape per data column by appending it to a path element
 	for (var i = 0; i < columnNames.length; i++) {
 
-		graph.append("path")
-			.attr("class", "graphLine line_" + i) // Assign classes for styling 
+		if(chart.type == "area"){
+
+			graph.append("path")
+				.attr("class", "graphLine line_" + i) // Assign classes for styling 
+				.attr("style", "stroke-width:1; fill:" + columnColors[i] + "; stroke:" + columnColors[i])
+
+		} else if(chart.type == "line"){
+
+			graph.append("path")
+				.attr("class", "graphLine line_" + i) // Assign classes for styling 
+				.attr("style", "stroke-width:3; fill:none; stroke:" + columnColors[i])
+		}
+
 
 		var legendItem = $("<li></li>")
+			.addClass("legendItem")
 			.addClass("legend_" + i)
-		legendItem.append("<span class='legendText'>" + columnNames[i] + "</span><span class='legendColor'></span>")
+		legendItem
+			.append("<span class='legendText'>" + columnNames[i] + "</span>")
+			.append("<span class='legendColor' style='background-color:" + columnColors[i] + "'></span>")
 
 		legend.append(legendItem)
 	}
@@ -127,7 +141,7 @@ function initializeChart( chart, labelX, labelY, columnNames ){
 }
 
 
-function refreshChart(chart, dataColumns){
+function refreshChart(chart, dataColumns, hiddenColumns ){
 
 	var graph = d3.select(chart.wrapperId).select("svg");
 	var path = graph.selectAll(".graphLine").data(dataColumns)
@@ -146,7 +160,7 @@ function refreshChart(chart, dataColumns){
 		var shape = d3.line()
 			.x(function(d,i) { return chart.xScale(i); })
 			.y(function(d) { return chart.yScale(d); })
-			.curve(d3.curveCardinal)
+			.curve(d3.curveBasis)
 	}
 
 	var scale = 1/d3.zoomTransform(graph.node()).k;
@@ -160,31 +174,46 @@ function refreshChart(chart, dataColumns){
 		graph.selectAll("text, .statics").attr("x", -offset1 )	// put statics back where they were, relatively
 		
 		path.attr("d", shape); // update values directly
-		return true;
+
+	} else {
+
+		// We want to show a continuous animated graph, but zoom functionality uses translate()
+		// Therefore, we have only one logical option: move the entire graph and animate it
+		// Elements that need to remain static (text and axes) are animated in reverse
+
+		graph.attr("transform", "translate(" + offset1 + ")") 	// set the transform to right, hide the new value
+		var statics = graph.selectAll("text, .statics")			// put statics back where they were, relatively
+			.attr("x", -offset1 ) 
+
+
+		path.attr("d", shape) 				// apply the new data values
+
+		graph
+			.transition() 					// start a transition to bring the new value into view
+			.ease(d3.easeLinear)
+			.duration(980 * settings.refreshPeriod) 	// continual slide, refreshPeriod (in ms) minus 2% for animation delay
+			.attr("transform", "translate(" + offset2 + ")"); // animate slide back left, reveal the new value
+
+		statics
+			.transition() 					// start the reverse transition to keep statics in their positions
+			.ease(d3.easeLinear)
+			.duration(980 * settings.refreshPeriod) 	// continual slide, refreshPeriod (in ms) minus 2% for animation delay
+			.attr("x", -offset2 ); 			// animate slide back right, hold your ground
 	}
 
-	// We want to show a continuous animated graph, but zoom functionality uses translate()
-	// Therefore, we have only one logical option: move the entire graph and animate it
-	// Elements that need to remain static (text and axes) are animated in reverse
-
-	graph.attr("transform", "translate(" + offset1 + ")") 	// set the transform to right, hide the new value
-	var statics = graph.selectAll("text, .statics")			// put statics back where they were, relatively
-		.attr("x", -offset1 ) 
 
 
-	path.attr("d", shape) 				// apply the new data values
+	if(hiddenColumns !== undefined){
 
-	graph
-		.transition() 					// start a transition to bring the new value into view
-		.ease(d3.easeLinear)
-		.duration(980 * settings.refreshPeriod) 	// continual slide, refreshPeriod (in ms) minus 2% for animation delay
-		.attr("transform", "translate(" + offset2 + ")"); // animate slide back left, reveal the new value
+		$(chart.wrapperId + ' .graphLine').css({"visibility":"visible"});
+		$(chart.wrapperId + ' .legendItem').css({"display":"block"});
 
-	statics
-		.transition() 					// start the reverse transition to keep statics in their positions
-		.ease(d3.easeLinear)
-		.duration(980 * settings.refreshPeriod) 	// continual slide, refreshPeriod (in ms) minus 2% for animation delay
-		.attr("x", -offset2 ); 			// animate slide back right, hold your ground
+		for (var i = 0; i < hiddenColumns.length; i++) {
+			
+			$(chart.wrapperId + ' .graphLine.line_' + hiddenColumns[i]).css({"visibility":"hidden"});
+			$(chart.wrapperId + ' .legend_' + hiddenColumns[i]).css({"display":"none"});
+		}
+	}
 }
 
 

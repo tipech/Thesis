@@ -1,11 +1,11 @@
 var waitPeriod = 2; // s, time to wait for state changes
 var refreshPeriod = 1; // s, time to wait between data retrieval (1Hz)
 
-var dataSmoothFactor = 5;
+var dataSmoothFactor = 10;
 var animatedChartRefresh = false;
 var logScaleCharts = true;
 
-var timer;
+var timer, interruptTimer;
 var lastUpdateTime = 0;
 var settings = [];
 var dataset = {
@@ -22,6 +22,14 @@ var chartList = {
 		'xScale':{},
 		'yScale':{},
 		'type': "area"
+	},
+	'newsItems':{
+		'wrapperId':"#newsItemStatisticsChart",
+		'domainX':0,
+		'domainY':40,
+		'xScale':{},
+		'yScale':{},
+		'type': "line"
 	}
 }
 
@@ -134,7 +142,7 @@ function showStatus( status ) {
 			$( ".help, .control, .error, .info" ).hide();
 			$( ".data" ).fadeIn();
 
-			$( ".tabControls .generalData" ).click(); 
+			$( ".tabControls .newsItemData" ).click(); 
 			break;
 
 		case "done":
@@ -415,31 +423,47 @@ function refreshGeneralStatistics(
 }
 
 function showNewsItems(newsItemsList) {
+
 	
 	$(".newsItemsList").empty();
 
-	newsItemsList.forEach( function(newsItem){
+	newsItemsList.forEach( function(newsItem, index){
 
-		newsElement = $('<li class="newsItem box" id=newsItem_"' + newsItem.id + '"></li>');
+		newsElement = $('<li class="newsItem box" id=newsItem_' + newsItem.id + '></li>');
+		newsElement.append('<b>#' + (newsItem.id+1) + '</b>');
 		newsElement.append('<label class="filter"><input type="checkbox" checked="checked"><span></span><label>');
 		newsElement.append('<div class="headline">' + newsItem.headline.replace(/\|&\|/g, "<br>") + '</div>');
-		newsElement.append('<div class="rate">' + "0" + '</div>');
-		newsElement.append('<div class="rateLabel">' + "&nbsp;tw/min" + '</div>');
+		newsElement.append('<div class="data"><span class="total"></span><span class="rate"></span></div>');
 
+		newsElement.find("[type=checkbox]:checked + span").css({"background-color":newsItem.graphColor})
+		if(index == 0){
+
+	console.log(newsItem.graphColor)
+		}
 
 		// make text color white for dark background colors
-		if( parseInt(newsItem.color.substring(1,3), 16) 
-			+ parseInt(newsItem.color.substring(3,5), 16) 
-			+ parseInt(newsItem.color.substring(5), 16) < 360) {
+		if( parseInt(newsItem.groupColor.substring(1,3), 16) 
+			+ parseInt(newsItem.groupColor.substring(3,5), 16) 
+			+ parseInt(newsItem.groupColor.substring(5), 16) < 360) {
 
 			var textColor = "white";
 		} else {
 			var textColor = "black";
 		}
-		newsElement.css( {"background-color": newsItem.color, "color": textColor } ); 
+		newsElement.css( {"background-color": newsItem.groupColor, "color": textColor } ); 
 
 
 		$(".newsItemsList").append(newsElement);
+	});
+}
+
+function refreshNewsItems(newsItemsList, bufferPointer) {
+
+	newsItemsList.forEach( function(newsItem){
+
+		$('#newsItem_' + newsItem.id + ' .total').text(newsItem.total[bufferPointer] + " tweets")
+		$('#newsItem_' + newsItem.id + ' .rate').text( (newsItem.rate[0]).toFixed(2) + " tw/min")
+
 	});
 }
 
@@ -618,10 +642,6 @@ function initializeData() {
 		dataset.general.startTime = data.statuses[0][4];
 		dataset.general.lastTime = data.statuses[data.statuses.length-1][4];
 
-		// prepare data buffers according to window size, "recent" data are in 1/20th of window
-		var bufferSize = Math.floor(settings.windowPeriod / settings.refreshPeriod);
-		var shortWindow = Math.floor(0.05 * settings.windowPeriod / settings.refreshPeriod);
-
 		var totalStatuses = [];
 		var matchedStatuses = [];
 		var limitedStatuses = [];
@@ -644,7 +664,7 @@ function initializeData() {
 
 		// show the general statistics chart
 		chartList.general.domainX = (settings.windowPeriod/settings.refreshPeriod);
-		initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total tweets", "Matched tweets"]);
+		initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total tweets", "Matched tweets"], ["#EEDF4F", "#60BD68"]);
 
 		// ---------------- News Items Statistics ----------------
 
@@ -654,7 +674,8 @@ function initializeData() {
 			dataset.newsItems[i] = {
 					'id':item[0],
 					'headline':item[1],
-					'color':mergeColors(item[2])
+					'groupColor':mergeColors(item[2]),
+					'graphColor':randomColor()
 				}
 			dataset.newsItems[i].total = initializeSumBuffer(item[3].split(",").map(function(value){ return parseInt(value); }));
 			dataset.newsItems[i].rate = initializeRateBuffer(dataset.newsItems[i].total, dataset.newsItems[i].rate);
@@ -663,6 +684,12 @@ function initializeData() {
 		// and show them
 		showNewsItems(dataset.newsItems);
 
+		// show the news items chart
+		chartList.newsItems.domainX = (settings.windowPeriod/settings.refreshPeriod);
+		initializeChart( chartList.newsItems, "Time", "Rate (tweets/minute)",
+				dataset.newsItems.map(function(item){return item.id}),
+				dataset.newsItems.map(function(item){return item.graphColor})
+			);
 
 		// ---------------- Group Statistics ----------------
 
@@ -759,6 +786,13 @@ function refreshData(){
 
 
 
+	refreshNewsItems(dataset.newsItems, bufferPointer);
+
+	refreshChart(
+		chartList.newsItems,
+		dataset.newsItems.map(function(item){return item.rate}),
+		dataset.newsItems.map(function(item){return item.id}).slice(4)
+		)
 
 	// check if it's time to update
 	if( timeNow - lastUpdateTime >= settings.updatePeriod ){
@@ -785,18 +819,30 @@ $( document ).ready( function() {
 
 	$(window).on("keyup", function(e){ 
 
-		if(e.which == 49){ // toggle log - linear chart scale on "1"
+		if(e.which == 112){ // toggle log - linear chart scale on "1"
 
 			logScaleCharts = !logScaleCharts;
-			toggleChartZoom(chartList.general)
+			toggleChartZoom(chartList.general);
+			toggleChartZoom(chartList.newsItems);
 
-		} else if(e.which == 50){ // toggle animated - chunky charts
+		} else if(e.which == 113){ // toggle animated - chunky charts
 			
 			animatedChartRefresh = !animatedChartRefresh;
 
-		} else if(e.which == 51){ // change data smoothing factor
+		} else if(e.which == 115){ // change data smoothing factor
+
+			clearTimeout(timer);
 			
-			dataSmoothFactor = (dataSmoothFactor % 5) + 1; // factor goes from 1 to 5
+			dataSmoothFactor = (dataSmoothFactor + 2) % 12 + 1; // factor goes from 1 to 10, step 3
+
+			// initializeData();
+
+			initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total tweets", "Matched tweets"], ["#EEDF4F", "#60BD68"]);
+
+			initializeChart( chartList.newsItems, "Time", "Rate (tweets/minute)",
+				dataset.newsItems.map(function(item){return item.id}),
+				dataset.newsItems.map(function(item){return item.graphColor})
+			);
 		}
 	})
 
@@ -827,7 +873,7 @@ $( document ).ready( function() {
 	$( ".preset._1" ).click( applyPreset1 );
 	$( ".preset._2" ).click( function() {
 
-		console.log( $( ".date :selected" ).val() ); // DEBUG ONLY
+		// DEBUG
 	} );
 
 

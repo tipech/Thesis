@@ -314,7 +314,7 @@ def error404(error):
 @get('/test')
 def test():
 	cursor = dbConnection.cursor()
-	cursor.execute( "SELECT newsData.id, newsData.title, newsData.mergedColor, tweetData.tweetCount FROM (SELECT news.id AS id, news.title AS title, group_concat(groups.color) AS mergedColor FROM newsGroups LEFT OUTER JOIN news ON newsGroups.newsItemId = news.id LEFT OUTER JOIN groups ON newsgroups.groupId = groups.id GROUP BY news.id) AS newsData LEFT OUTER JOIN (SELECT newsIdTotal AS id, group_concat(tweetCountTotal) AS tweetCount FROM (SELECT statusId AS statusIdTotal, newsId AS newsIdTotal, sum(tweetCount) AS tweetCountTotal FROM (SELECT status.id AS statusId, news.id AS newsId, 0 AS tweetCount FROM news CROSS JOIN status UNION SELECT status.id AS statusId, tweets.newsId AS newsId, count(tweets.id) AS tweetCount FROM status LEFT OUTER JOIN tweets ON status.time/5 = (tweets.time + 5/2)/5 GROUP BY tweets.newsId, status.id) GROUP BY statusId, newsId) GROUP BY newsIdTotal) AS tweetData ON newsData.id = tweetData.id")
+	cursor.execute( "SELECT * FROM groups")
 	result = cursor.fetchall()
 	cursor.close()
 

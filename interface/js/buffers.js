@@ -1,5 +1,6 @@
 // This file contains functions for processing data buffers (etc. buffer initialization, interpolation)
 
+var shortWindowRatio = 0.05;
 
 function initializeSumBuffer( data ) {
 
@@ -34,7 +35,7 @@ function initializeSumBuffer( data ) {
 				var wOld = j/settings.updatePeriod;
 
 				// produce interpolated value
-				sumBuffer[bufferStep -j] = Math.floor(wNew* sumBuffer[bufferStep] + wOld* sumBuffer[bufferStep -settings.updatePeriod])
+				sumBuffer[bufferStep -j] = Math.round(wNew* sumBuffer[bufferStep] + wOld* sumBuffer[bufferStep -settings.updatePeriod])
 			}
 
 		} else { // we are at first status
@@ -48,7 +49,7 @@ function initializeSumBuffer( data ) {
 				var wNew = 1 - j/settings.updatePeriod;
 
 				// produce interpolated value
-				sumBuffer[bufferStep - j] = Math.floor(wNew * sumBuffer[bufferStep])
+				sumBuffer[bufferStep - j] = Math.round(wNew * sumBuffer[bufferStep])
 			}
 		}
 	}
@@ -67,28 +68,31 @@ function initializeRateBuffer( sumBuffer ){
 
 	// prepare data buffers according to window size, "recent" data are in 1/20th of window
 	var bufferSize = Math.floor(settings.windowPeriod / settings.refreshPeriod);
-	var shortWindow = Math.floor(0.05 * bufferSize);
+	var shortWindow = Math.floor(shortWindowRatio * bufferSize);
 
 	var rateBuffer = new Array(bufferSize).fill(0);
 
-	// put the first value in
-	rateBuffer[0] = 60*(sumBuffer[0] - sumBuffer[shortWindow]) / (shortWindow*settings.refreshPeriod)
+	// this is the earliest rate value we ca truly calculate, everything before this is outside our window
+	var earliestValue = bufferSize - shortWindow - parseInt(settings.updatePeriod) - 1
 
-	// prepare the rate buffer, sized for the entire window
-	for (var i = 1; i < bufferSize; i++) {
+	// calculate the earliest value (needed to smooth forward)
+	rateBuffer[earliestValue] = 60*(sumBuffer[earliestValue] - sumBuffer[shortWindow + earliestValue]) 
+		/ (shortWindow*settings.refreshPeriod)
 
-		// too early to calculate rate, just copy the later values
-		if(shortWindow + parseInt(settings.updatePeriod) + i >= bufferSize){
+	// calculate the rates, starting at earliest value -1
+	for (var i = earliestValue -1; i >= 0; i--) {
 
-			rateBuffer[i] = rateBuffer[bufferSize - shortWindow - parseInt(settings.updatePeriod) -1];
-		
-		} else {
+		var newRate = 60*(sumBuffer[i] - sumBuffer[shortWindow + i]) / (shortWindow*settings.refreshPeriod)
+		var newRateSmoothed = ((dataSmoothFactor-1) * rateBuffer[i+1] + newRate) / dataSmoothFactor
 
-			var newRate = 60*(sumBuffer[i] - sumBuffer[shortWindow + i]) / (shortWindow*settings.refreshPeriod)
-			rateBuffer[i] = ((dataSmoothFactor-1) * rateBuffer[i-1] + newRate) / dataSmoothFactor;
-		}
+		rateBuffer[i] = newRateSmoothed;
 	}
 
+	// fill the buffers at the start with just the earliest value
+	for (var i = bufferSize - 1; i > earliestValue; i--) {
+
+		rateBuffer[i] = rateBuffer[earliestValue];
+	}
 
 	return rateBuffer;
 }
@@ -110,7 +114,7 @@ function updateSumBuffer(sumBuffer, value) {
 		var wNew = i/bufferBlockSize;
 
 		// Add interpolated general statistics to the dataset
-		sumBuffer.unshift(wNew*(value + sumBuffer[i-1])	+ wOld*sumBuffer[i-1] );
+		sumBuffer.unshift(Math.round(wNew*(value + sumBuffer[i-1]) + wOld*sumBuffer[i-1]) );
 		sumBuffer.pop();
 	}
 }
@@ -121,7 +125,7 @@ function refreshRateBuffer(rateBuffer, sumBuffer, bufferPointer){
 	// buffers are separated into blocks, corresponding to true values plus interpolations
 	var bufferBlockSize = settings.updatePeriod / settings.refreshPeriod;
 	// this contains all "recent" data (1/20th of the window) minus one update
-	var shortWindow = Math.floor(0.05 * settings.windowPeriod / settings.refreshPeriod);
+	var shortWindow = Math.floor(shortWindowRatio * settings.windowPeriod / settings.refreshPeriod);
 
 	// calculate and store the tweet rates
 	var newRate = 60*(sumBuffer[bufferPointer] - sumBuffer[shortWindow+bufferPointer])/	(shortWindow*settings.refreshPeriod)
