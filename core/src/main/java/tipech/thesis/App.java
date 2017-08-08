@@ -69,7 +69,7 @@ public class App
 	/* =============== General Setup =============== */
 
 	private static STATE state;
-	private static int TIMEOUT = 20*60; // seconds until process termination
+	private static int TIMEOUT = 40*60; // seconds until process termination
 
 	// ---- Managers ----
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
@@ -205,12 +205,12 @@ public class App
 
 						processSingleTweet();
 
-						// Every *statusRate* seconds (default: 10), insert measurements into database
-						if( System.currentTimeMillis() > refreshTime + message.getStatusRate()*1000 ){ 
+						// Every *updatePeriod* seconds (default: 10), insert measurements into database
+						if( System.currentTimeMillis() > refreshTime + message.getUpdatePeriod()*1000 ){ 
 
 							// Save status
 							dbManager.saveStatus(tweetTotal, matchTotal, limitTotal, System.currentTimeMillis()/1000);
-							refreshTime = System.currentTimeMillis();
+							refreshTime += message.getUpdatePeriod()*1000;
 							tweetTotal = 0; matchTotal = 0; limitTotal = 0;
 
 							// Check for input
@@ -384,7 +384,7 @@ public class App
 		dbManager.setupTweets();
 	}
 
-	private static void setupStream() {
+	private static void setupStream() throws InterruptedException {
 
 		System.out.println("Calculating twitter search terms...");
 
@@ -423,8 +423,13 @@ public class App
 			.build();
 
 
-		// Show time
+		// Showtime
 		hosebirdClient.connect();
+
+		// Retrieve a single random tweet, so that we can calculate the time difference between computer and Twitter
+		JsonObject jsonTweet = new JsonParser().parse( msgQueue.take() ).getAsJsonObject();
+		final Tweet tweet = new Tweet(jsonTweet); 
+		dbManager.setTimeOffset( (tweet.getTime() - System.currentTimeMillis())/1000 );
 	}
 
 	private static void processSingleTweet() throws InterruptedException{
@@ -447,7 +452,7 @@ public class App
 					try{
 						System.out.println("\nMatch! News: " + newsItem.getTitle() + "\n Tweet: " + tweet.getText());
 						newsItem.setLastTweet(tweet);
-						dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime());
+						dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime()/1000);
 						matchTotal++;
 					
 					} catch (SQLException e) {

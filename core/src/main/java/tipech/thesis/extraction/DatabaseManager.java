@@ -24,6 +24,7 @@ import tipech.thesis.entities.NewsItem;
 public class DatabaseManager {
 
 	private Connection connection = null;
+	private static double timeOffset = 0; // holds the time difference between computer and twitter time
 
 	public DatabaseManager() throws SQLException {
 
@@ -190,6 +191,12 @@ public class DatabaseManager {
 
 	}
 
+	public void setTimeOffset(double timeOffset){
+
+		// when we receive the first tweet, calculate and store the computer-twitter time offset
+		this.timeOffset = timeOffset;
+	}
+
 	public void setupTweets() throws SQLException{
 
 		// drop table if exists
@@ -243,10 +250,12 @@ public class DatabaseManager {
 
 	public void saveStatus(int total, int matched, int limited, long time) throws SQLException{
 
+		long adjustedTime = time + Math.round(timeOffset);
+
 		// save status
 		Statement insertStatus = connection.createStatement();
 		String insertStatusSql = "INSERT INTO status ('total','matched','limited','time')" +
-			" VALUES(" + total + ", " + matched + ", " + limited + ", " + time + ")";
+			" VALUES(" + total + ", " + matched + ", " + limited + ", " + adjustedTime + ")";
 
 		insertStatus.executeUpdate(insertStatusSql);
 	}

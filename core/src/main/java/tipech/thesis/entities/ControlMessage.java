@@ -23,7 +23,7 @@ public class ControlMessage {
 	private LocalDate rejectDate; 		// reject everything before that date
 	private double newsThreshold = 0.3; 	// news item cross-referencing similarity threshold
 	private double tweetThreshold = 0.1; 	// news item - tweet similarity threshold
-	private int statusRate = 5;			// how often status gets refreshed
+	private int updatePeriod = 5;			// how often status gets refreshed
 
 	private final List<FeedGroup> groups = new ArrayList<FeedGroup>();
 
@@ -68,7 +68,7 @@ public class ControlMessage {
 				}
 
 				// Get status refresh rate and thresholds
-				this.statusRate = settings.get("updatePeriod").getAsInt();
+				this.updatePeriod = settings.get("updatePeriod").getAsInt();
 				this.newsThreshold = settings.get("newsThreshold").getAsDouble();
 				this.tweetThreshold = settings.get("tweetThreshold").getAsDouble();
 			} else {
@@ -102,8 +102,8 @@ public class ControlMessage {
 		return tweetThreshold;
 	}
 
-	public int getStatusRate(){
-		return statusRate;
+	public int getUpdatePeriod(){
+		return updatePeriod;
 	}
 
 	public boolean isEmpty() {
