@@ -325,4 +325,4 @@ def test():
 
 	return json.dumps(result)
 
-run(host='localhost', port=8080, debug=True, reloader=True)
+run(host='0.0.0.0', port=8080, debug=True, reloader=True)
