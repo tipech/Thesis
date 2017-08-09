@@ -469,6 +469,7 @@ ul {
 	position: absolute;
 	width: 140px;
 	height: 236px;
+	margin: 10px 0;
 
 	display: flex;
 	flex-flow: column;
@@ -485,6 +486,7 @@ ul {
 	width: 100px;
 
 	cursor: pointer;
+	font-size: 17px;
 }
 
 .data > .title {
@@ -496,6 +498,17 @@ ul {
 
 	font-weight: bold;
 	font-size: larger;
+}
+
+.data > .title > span:first-child {
+
+	flex-grow: 1;
+}
+
+.chartWrapper {
+
+	overflow: hidden;
+	cursor: grab;
 }
 
 .chartWrapper line, .chartWrapper .domain{ /* axes etc */
@@ -524,9 +537,11 @@ ul {
 .chartWrapper .legend {
 
 	position: relative;
-	width: 20%;
+	width: 11%;
+	max-height: 310px;
 	padding: 4px 8px; 
 
+	overflow-y: auto;
 	background-color: white;
 	border: 1px solid #4D4D4D;
 }
@@ -549,7 +564,6 @@ ul {
 	margin: 0 50px 20px;
 	width: 880px;
 	height: 400px;
-	overflow: hidden;
 }
 
 .statsList > li {
@@ -572,15 +586,70 @@ ul {
 }
 
 
-/* --------------- News List ----------------- */
-
+/* ------------ News Statistics -------------- */
 
 #newsItemStatisticsChart {
 
-	margin: 0 50px 20px;
+	margin: 0 50px 40px;
 	width: 880px;
 	height: 400px;
-	overflow: hidden;
+}
+
+#groupStatisticsChart {
+
+	margin: 0 50px 40px;
+	width: 880px;
+	height: 400px;
+}
+
+.data > .buttonBar {
+
+	display: flex;
+	margin-bottom: 5px;
+}
+
+.data > .buttonBar > span {
+
+	display: inline-block;
+	margin: 5px;
+
+	flex-grow: 1;
+	text-align: right;
+	font-weight: bold;
+	font-size: larger;
+}
+
+.data > .buttonBar > select {
+
+	margin-left: 10px;
+	padding-right: 20px ;
+
+	border: none;
+
+	-webkit-appearance: none; 
+	-moz-appearance: none;
+	appearance: none;       /* remove default arrow */
+	background:
+	url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAcAAAAHCAYAAADEUlfTAAAAG0lEQVR42mNgwAfKy8v/48I4FeA0AacVDFQBAP9wJkE/KhUMAAAAAElFTkSuQmCC")
+	96% no-repeat white;
+	background-size: 10%;
+	
+	font-size: large;
+}
+
+.data > .buttonBar > select::-ms-expand { 
+
+	display: none; /* hide the default arrow in ie10 and ie11 */
+}
+
+.data > .buttonBar > a{
+
+	display: inline-block;
+	margin: 5px;
+
+	font-weight: bold;
+	text-decoration: underline;
+	cursor: pointer;
 }
 
 .groupItem, .newsItem {
@@ -613,6 +682,7 @@ ul {
 .groupItem > .data, .newsItem > .data {
 
 	flex-shrink: 0;
+	width: 110px;
 }
 
 .groupItem > .data > span, .newsItem > .data > span {
@@ -621,9 +691,17 @@ ul {
 	text-align: right;
 }
 
+.groupItem > span , .newsItem > span {
+
+	margin-right: 4px;
+	display: inline-block;
+	width: 40px;
+	font-weight: bold;
+}
+
 .newsItem > .filter {
 
-	margin: 0 8px;
+	margin: 0 5px;
 	width: 21px;
 	height: 21px;
 

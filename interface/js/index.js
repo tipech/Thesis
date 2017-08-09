@@ -5,7 +5,7 @@ var dataSmoothFactor = 10;
 var animatedChartRefresh = false;
 var logScaleCharts = true;
 
-var timer, interruptTimer;
+var timer;
 var lastUpdateTime = 0;
 var settings = [];
 var dataset = {
@@ -26,10 +26,18 @@ var chartList = {
 	'newsItems':{
 		'wrapperId':"#newsItemStatisticsChart",
 		'domainX':0,
-		'domainY':40,
+		'domainY':50,
 		'xScale':{},
 		'yScale':{},
 		'type': "line"
+	},
+	'groups':{
+		'wrapperId':"#groupStatisticsChart",
+		'domainX':0,
+		'domainY':2000,
+		'xScale':{},
+		'yScale':{},
+		'type': "area"
 	}
 }
 
@@ -152,7 +160,7 @@ function showStatus( status ) {
 			$( ".reset.button" ).fadeIn();
 
 			$( ".spinner .ring" ).fadeOut( 1000 );
-			$( ".spinner .circle" ).css( { "background-color": "#1A0", "width": "110px", "height": "110px", "border-radius": "55px" } );
+			$( ".spinner .circle" ).css( { "background-color": "#E33", "width": "110px", "height": "110px", "border-radius": "55px" } );
 			$( ".spinner .circle .status" ).fadeOut( 0 ).delay( 2000 ).fadeIn();
 			$( ".spinner .circle .status" ).text( "Done" );
 			$( ".spinner .circle .status" ).css( { "color": "white" } );
@@ -168,13 +176,13 @@ function showError( errorText ) {
 	var errorWrapper = $( "<div></div>" ).html( errorText );
 	errorWrapper.find( "style, title" ).remove();
 
-	$( ".error.box" ).append( errorWrapper );
+	$( ".error.box" ).append( errorWrapper);
 	$( ".error.box" ).show();
 }
 
 function showInfo( infoText ) {
 
-	$( ".info.box" ).append( infoText );
+	$( ".info.box" ).append( infoText + "<br><br>" );
 	$( ".info.box" ).show();
 }
 
@@ -427,19 +435,16 @@ function showNewsItems(newsItemsList) {
 	
 	$(".newsItemsList").empty();
 
-	newsItemsList.forEach( function(newsItem, index){
+	newsItemsList.forEach( function(newsItem){
 
 		newsElement = $('<li class="newsItem box" id=newsItem_' + newsItem.id + '></li>');
-		newsElement.append('<b>#' + (newsItem.id+1) + '</b>');
 		newsElement.append('<label class="filter"><input type="checkbox" checked="checked"><span></span><label>');
+		newsElement.append('<span>#' + (newsItem.id+1) + '</span>');
 		newsElement.append('<div class="headline">' + newsItem.headline.replace(/\|&\|/g, "<br>") + '</div>');
 		newsElement.append('<div class="data"><span class="total"></span><span class="rate"></span></div>');
 
 		newsElement.find("[type=checkbox]:checked + span").css({"background-color":newsItem.graphColor})
-		if(index == 0){
-
-	console.log(newsItem.graphColor)
-		}
+		newsElement.find("label").click(function(){ updateCheckedNewsItems() })
 
 		// make text color white for dark background colors
 		if( parseInt(newsItem.groupColor.substring(1,3), 16) 
@@ -452,6 +457,10 @@ function showNewsItems(newsItemsList) {
 		}
 		newsElement.css( {"background-color": newsItem.groupColor, "color": textColor } ); 
 
+		if(!newsItem.checked){
+			
+			newsElement.find("[type=checkbox]").prop('checked', false);
+		}
 
 		$(".newsItemsList").append(newsElement);
 	});
@@ -467,17 +476,41 @@ function refreshNewsItems(newsItemsList, bufferPointer) {
 	});
 }
 
+function updateCheckedNewsItems(){
+
+	for (var i = 0; i < dataset.newsItems.length; i++) {
+
+		dataset.newsItems[i].checked = $("#newsItem_" + dataset.newsItems[i].id + " [type=checkbox]").prop('checked')
+	}
+}
+
+function sortNewsItems(){
+
+	if($("#newsSortSelect").val() == 0){ // sort by id
+
+		var sortedItems = dataset.newsItems.slice(0).sort(function(a, b){ return a.id - b.id })
+	
+	} else if($("#newsSortSelect").val() == 1){ // sort by tweet totals
+
+		var sortedItems = dataset.newsItems.slice(0).sort(function(a, b){ return b.total[0] - a.total[0] })
+
+	} else if($("#newsSortSelect").val() == 2){ // sort by tweet rates
+
+		var sortedItems = dataset.newsItems.slice(0).sort(function(a, b){ return b.rate[0] - a.rate[0] })
+	}
+
+	return sortedItems;
+}
+
 function showGroups(groupsList) {
 	
 	$(".groupsList").empty();
 
 	groupsList.forEach( function(groupItem){
 
-		groupElement = $('<li class="groupItem box" id=groupItem_"' + groupItem.id + '"></li>');
+		groupElement = $('<li class="groupItem box" id=groupItem_' + groupItem.id + '></li>');
 		groupElement.append('<div class="name">' + groupItem.name + '</div>');
-		groupElement.append('<div class="rate">' + "0" + '</div>');
-		groupElement.append('<div class="rateLabel">' + "&nbsp;tw/min" + '</div>');
-
+		groupElement.append('<div class="data"><span class="total"></span><span class="rate"></span></div>');
 
 		// make text color white for dark background colors
 		if( parseInt(groupItem.color.substring(1,3), 16) 
@@ -492,6 +525,16 @@ function showGroups(groupsList) {
 
 
 		$(".groupsList").append(groupElement);
+	});
+}
+
+function refreshGroups(groupsList, bufferPointer) {
+
+	groupsList.forEach( function(group){
+
+		$('#groupItem_' + group.id + ' .total').text(group.total[bufferPointer] + " tweets")
+		$('#groupItem_' + group.id + ' .rate').text( (group.rate[0]).toFixed(2) + " tw/min")
+
 	});
 }
 
@@ -544,9 +587,13 @@ function loadPage() {
 			clearTimeout( timer );
 			timer = setTimeout( checkBooted, waitPeriod * 1000 );
 
-		} else if (status.state == "live") {
+		} else if (status.state == "done") {
 			showStatus(status);
 			initializeData();
+
+		} else if (status.state == "live") {
+			showStatus(status);
+			initializeData(function(){refreshData()});
 		}
 	} );
 }
@@ -609,12 +656,13 @@ function start() {
 
 				// Show loading...
 				showStatus( status );
+				showInfo("Extracting news items and keywords from provided feeds...");
 
 				// wait until keyword extraction is done
 				waitUntilState( "setup", function( status ){
 
 					// when keyword extraction is done, show a message
-					showInfo("Extracting news items and keywords from provided feeds...");
+					showInfo("Extraction done, setting up Twitter stream...");
 				});	
 
 				// wait until live processing starts
@@ -622,7 +670,7 @@ function start() {
 
 					// when news items are ready, load them and start live processing
 					showStatus(status);
-					initializeData();
+					initializeData(function(){refreshData()});
 				});	
 			}
 
@@ -630,7 +678,7 @@ function start() {
 	} );
 }
 
-function initializeData() {
+function initializeData(callback) {
 
 	getAPI( "init", function( data ) {
 
@@ -638,9 +686,11 @@ function initializeData() {
 
 		// ---------------- General Statistics ----------------
 
-		// store starting time
+		// store times and other info
 		dataset.general.startTime = data.statuses[0][4];
 		dataset.general.lastTime = data.statuses[data.statuses.length-1][4];
+
+		dataset.feedsNumber = data.feedsCount;
 
 		var totalStatuses = [];
 		var matchedStatuses = [];
@@ -663,8 +713,8 @@ function initializeData() {
 
 
 		// show the general statistics chart
-		chartList.general.domainX = (settings.windowPeriod/settings.refreshPeriod);
-		initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total tweets", "Matched tweets"], ["#EEDF4F", "#60BD68"]);
+		chartList.general.domainX = settings.windowPeriod/settings.refreshPeriod;
+		initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total", "Matched"], ["#EEDF4F", "#60BD68"]);
 
 		// ---------------- News Items Statistics ----------------
 
@@ -675,40 +725,64 @@ function initializeData() {
 					'id':item[0],
 					'headline':item[1],
 					'groupColor':mergeColors(item[2]),
-					'graphColor':randomColor()
+					'graphColor':randomColor(),
+					'checked':false
 				}
 			dataset.newsItems[i].total = initializeSumBuffer(item[3].split(",").map(function(value){ return parseInt(value); }));
 			dataset.newsItems[i].rate = initializeRateBuffer(dataset.newsItems[i].total, dataset.newsItems[i].rate);
 		}
 
-		// and show them
-		showNewsItems(dataset.newsItems);
-
 		// show the news items chart
-		chartList.newsItems.domainX = (settings.windowPeriod/settings.refreshPeriod);
+		chartList.newsItems.domainX = settings.windowPeriod/settings.refreshPeriod;
+		var maxNewsRate = d3.max(dataset.newsItems.map(function(item){ return d3.max(item.rate) }))
+		chartList.newsItems.domainY = maxNewsRate * 1.2;
 		initializeChart( chartList.newsItems, "Time", "Rate (tweets/minute)",
-				dataset.newsItems.map(function(item){return item.id}),
-				dataset.newsItems.map(function(item){return item.graphColor})
+				dataset.newsItems.map(function(item){return "Item: " + (item.id + 1)}),			// item names
+				dataset.newsItems.map(function(item){return item.graphColor})		// item colors
 			);
+
+		// sort them
+		var sortedNewsItems = sortNewsItems()
+		// check the first 5, by whatever they are sorted
+		sortedNewsItems.slice(0,5).forEach(function(item){
+			item.checked = true;
+			dataset.newsItems[item.id].checked = true;
+		})
+		// and show them
+		showNewsItems(sortedNewsItems)
 
 		// ---------------- Group Statistics ----------------
 
 		// process groups into dataset
 		for (var i = 0; i < data.groups.length; i++) {
 			var item = data.groups[i];
-			dataset.groups[i] = {'id':item[0], 'name':item[1], 'color':mergeColors(item[2]),'rate':[]}
+			dataset.groups[i] = {
+					'id':item[0],
+					'name':item[1],
+					'color':item[2]
+				}
 
-			for (var j = 0; j < settings.updatePeriod; j++) {
-				dataset.groups[i].rate[j] = 0;
-			}
+			dataset.groups[i].total = initializeSumBuffer(item[3].split(",").map(function(value){ return parseInt(value); }));
+			dataset.groups[i].rate = initializeRateBuffer(dataset.groups[i].total, dataset.groups[i].rate);
 		}
+
+		// show the groups chart
+		chartList.groups.domainX = settings.windowPeriod/settings.refreshPeriod;
+		var maxGroupsRate = d3.max(dataset.groups.map(function(item){ return d3.max(item.rate) }))
+		chartList.groups.domainY = maxGroupsRate * 1.2;
+		initializeChart( chartList.groups, "Time", "Rate (tweets/minute)",
+				dataset.groups.map(function(item){return item.name}),			// item names
+				dataset.groups.map(function(item){return item.color})		// item colors
+			);
 
 		// and show them
 		showGroups(dataset.groups);
 
-		dataset.feedsNumber = data.feedsCount;
 
-		refreshData();
+		if(callback !== undefined){
+
+			callback();
+		}
 	});
 }
 
@@ -736,12 +810,37 @@ function updateData() {
 
 			updateSumBuffer(dataset.newsItems[i].total, data.newsItems[i][1]);
 		}
+
+		for (var i = 0; i < dataset.groups.length; i++) {
+
+			updateSumBuffer(dataset.groups[i].total, data.groups[i][1]);
+		}
 	} );
 }
 
 function refreshData(){
 
 	var timeNow = Math.floor(Date.now() / 1000);
+
+	// check if it's time to update
+	if( timeNow - lastUpdateTime >= settings.updatePeriod ){
+
+		lastUpdateTime = timeNow;
+		updateData();
+
+		// every 4 periods, refresh the list sorting too
+		if( timeNow % 4*settings.updatePeriod < 1 ){
+
+			showNewsItems(sortNewsItems())
+
+			var maxNewsRate = d3.max(dataset.newsItems.map(function(item){ return d3.max(item.rate) }))
+			chartList.newsItems.domainY = maxNewsRate * 1.2;
+			chartList.newsItems.yScale.domain([chartList.newsItems.domainY, 0])
+		}	
+	}
+
+	// continue loop
+	timer = setTimeout( refreshData, settings.refreshPeriod * 1000 );
 
 
 	// calculate what part of the refresh cycle we are in
@@ -757,7 +856,13 @@ function refreshData(){
 		refreshRateBuffer(dataset.newsItems[i].rate, dataset.newsItems[i].total, bufferPointer);
 	}
 
+	for (var i = 0; i < dataset.groups.length; i++) {
 
+		refreshRateBuffer(dataset.groups[i].rate, dataset.groups[i].total, bufferPointer);
+	}
+
+
+	// ---------------- General Statistics ----------------
 
 	// calculate and show values
 	var matchedPercent   = 100 * dataset.general.matched[bufferPointer] / dataset.general.total[bufferPointer];
@@ -785,26 +890,54 @@ function refreshData(){
 	refreshChart(chartList.general, [dataset.general.tweetRate, dataset.general.matchedRate])
 
 
+	// ---------------- News Items Statistics ----------------
 
 	refreshNewsItems(dataset.newsItems, bufferPointer);
 
 	refreshChart(
-		chartList.newsItems,
-		dataset.newsItems.map(function(item){return item.rate}),
-		dataset.newsItems.map(function(item){return item.id}).slice(4)
+			chartList.newsItems,
+			dataset.newsItems.map(function(item){return item.rate}),
+			dataset.newsItems.filter(function(item){ return !item.checked}).map(function(item){return item.id})
 		)
 
-	// check if it's time to update
-	if( timeNow - lastUpdateTime >= settings.updatePeriod ){
+	// ---------------- Groups Statistics ----------------
 
-		lastUpdateTime = timeNow;
-		updateData();
-	}
+	refreshGroups(dataset.groups, bufferPointer);
 
-	// continue loop
-	timer = setTimeout( refreshData, settings.refreshPeriod * 1000 );
+
+	refreshChart(
+			chartList.groups,
+			dataset.groups.map(function(item){return item.rate})
+		)
 }
 
+function stop() {
+
+	$.post( {
+		url: "stop",
+		dataType: "json",
+		error: function( error ) {
+
+			showError( error.responseText ? error.responseText : "Server process unreachable!" );
+		},
+		success: function( status ) {
+
+			if ( status.state == "live" ) {
+
+				status[ 'error' ] = "Nothing Happened";
+				showStatus( status );
+
+			} else {
+
+				clearTimeout(timer);
+
+				// Show loading...
+				showStatus( status );
+			}
+
+		}
+	} );
+}
 
 
 $( document ).ready( function() {
@@ -815,6 +948,8 @@ $( document ).ready( function() {
 
 	$( ".boot.button" ).click( boot );
 	$( ".start.button" ).click( start );
+	$( ".stop.button" ).click( stop );
+	$( ".reset.button" ).click( boot );
 
 
 	$(window).on("keyup", function(e){ 
@@ -824,6 +959,7 @@ $( document ).ready( function() {
 			logScaleCharts = !logScaleCharts;
 			toggleChartZoom(chartList.general);
 			toggleChartZoom(chartList.newsItems);
+			toggleChartZoom(chartList.groups);
 
 		} else if(e.which == 113){ // toggle animated - chunky charts
 			
@@ -833,16 +969,22 @@ $( document ).ready( function() {
 
 			clearTimeout(timer);
 			
+			//hold on to news item colors
+			var newsItemColors = dataset.newsItems.map(function(item){ return item.graphColor; })
+			var newsItemChecks = dataset.newsItems.map(function(item){ return item.checked; })
 			dataSmoothFactor = (dataSmoothFactor + 2) % 12 + 1; // factor goes from 1 to 10, step 3
 
-			// initializeData();
+			initializeData(function(){
 
-			initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total tweets", "Matched tweets"], ["#EEDF4F", "#60BD68"]);
+				for (var i = 0; i < dataset.newsItems.length; i++) {
+					
+					dataset.newsItems[i].graphColor = newsItemColors[i];
+					dataset.newsItems[i].checked = newsItemChecks[i];
+				}
 
-			initializeChart( chartList.newsItems, "Time", "Rate (tweets/minute)",
-				dataset.newsItems.map(function(item){return item.id}),
-				dataset.newsItems.map(function(item){return item.graphColor})
-			);
+				showNewsItems(sortNewsItems());
+				refreshData();
+			});
 		}
 	})
 
@@ -898,7 +1040,36 @@ $( document ).ready( function() {
 		$( ".content .data.newsData" ).show()
 	})
 
+	$( "#newsSortSelect" ).change( function(){ 
+
+		showNewsItems(sortNewsItems());
+	})
+
+	$( "#checkAll" ).click(function(){
+		dataset.newsItems.forEach(function(item){ item.checked = true })
+		showNewsItems(sortNewsItems());
+	});
+	$( "#checkTop" ).click(function(){
+		var sortedItems = sortNewsItems()
+		sortedItems.forEach(function(item, index){
+			item.checked = index < 5
+			dataset.newsItems[item.id].checked = index < 5
+		})
+		showNewsItems(sortedItems);
+	});
+	$( "#checkNone" ).click(function(){
+		dataset.newsItems.forEach(function(item){ item.checked = false })
+		showNewsItems(sortNewsItems());
+	});
+
 	// =============== Page Load ================
+
+	// configure settings according to browser compatibility
+	if(typeof InstallTrigger !== 'undefined'){ // Firefox
+
+		animatedChartRefresh = true;
+	}
+
 
 	loadPage();
 

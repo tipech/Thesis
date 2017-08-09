@@ -12,10 +12,11 @@ function randomColor() {
 		lastHue = Math.random();
 	}
 
-	lastHue += goldenRatioConjugate;
+	lastHue +=  goldenRatioConjugate;
 	lastHue %= 1;
 
-	var result = hsv2rgb(lastHue, 0.5, 0.95)
+	var v = Math.random()/5 + 0.75; // random value from 0.85 to 0.95
+	var result = hsv2rgb(lastHue, 0.9, v)
 
 	return rgb2hex('rgb(' + result.r + ', ' + result.g + ', ' + result.b + ')');
 }

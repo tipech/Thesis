@@ -18,7 +18,7 @@
 		<a class="boot button">Initialize</a>
 		<a class="start button">Start</a>
 		<a class="stop button">Stop</a>
-		<a class="reset button">Stop</a>
+		<a class="reset button">Reset</a>
 		<div class="data button tabControls">
 			<a class="data button generalData">General Data</a>
 			<a class="data button groupData">Feed Group Data</a>
@@ -156,13 +156,29 @@
 			</ul>
 		</div>
 		<div class="data box groupData">
-			<div class="title"><span>News Source Groups</span><span>Mentions</span></div>
+			<div class="title">
+				<span>News Source Groups</span>
+			</div>
+			<div id="groupStatisticsChart" class="chartWrapper"></div>
 			<ul class="groupsList">
 			</ul>
 		</div>
 		<div class="data box newsData">
-			<div class="title"><span>News headlines</span><span>Mentions</span></div>
+			<div class="title">
+				<span>News headlines</span>
+			</div>
 			<div id="newsItemStatisticsChart" class="chartWrapper"></div>
+			<div class="buttonBar">
+				<a id="checkAll">All</a>
+				<a id="checkTop">Top 5</a>
+				<a id="checkNone">None</a>
+				<span>Sort: </span>
+				<select id="newsSortSelect">
+					<option value="0" selected="selected">Id</option>
+					<option value="1">Tweets</option>
+					<option value="2">Rate</option>
+				</select>
+			</div>
 			<ul class="newsItemsList">
 			</ul>
 		</div>

@@ -20,7 +20,7 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 	graph = d3.select(chart.wrapperId).append("svg")
 		.attr("width", "100%").attr("height", "100%")
 
-	chart.xScale = d3.scaleLinear().domain([chart.domainX, 0]).range([-5, width]); 
+	chart.xScale = d3.scaleLinear().domain([chart.domainX, 0]).range([-5, width-20]); 
 	chart.yScale = d3.scalePow().domain([chart.domainY, 0]).range([0, height-41]);
 	chart.yScale.exponent([ logScaleCharts ? 0.5 : 1 ]);
 
@@ -44,7 +44,7 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 
 
 	var yAxis = d3.axisRight(chart.yScale)
-		.ticks(12)
+		// .ticks(12)
 		.tickFormat(function(d){ 
 			if (d < 0 || d == chart.domainY){ 
 				return "";
@@ -63,7 +63,7 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 
 	var labelYDiv = $("<div></div>")
 		.addClass("axisLabel")
-		.css({ "transform":"translate( " + (width/2 -6) + "px, " + (-height/2 -30) + "px) rotate(90deg)" })
+		.css({ "transform":"translate( " + (width/2 -14) + "px, " + (-height/2 -30) + "px) rotate(90deg)" })
 		.text(labelY);
 	$(chart.wrapperId).append(labelYDiv);
 
@@ -79,7 +79,7 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 
 			graph.append("path")
 				.attr("class", "graphLine line_" + i) // Assign classes for styling 
-				.attr("style", "stroke-width:1; fill:" + columnColors[i] + "; stroke:" + columnColors[i])
+				.attr("style", "stroke-width:1; fill-opacity:0.8; fill:" + columnColors[i] + "; stroke:" + columnColors[i])
 
 		} else if(chart.type == "line"){
 
@@ -99,43 +99,41 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 		legend.append(legendItem)
 	}
 
+	// draw the actual axes and rectangles to hide everything behind them
+	graph.append("rect")
+		.attr("class", "x axisBgRect statics")
+		.attr("width", width)
+		.attr("transform","translate( 0, " + (height-40) + ")")
+		.attr("height",40);
+
+	graph.append("rect")
+		.attr("class", "x axisRect statics")
+		.attr("width", width-54)
+		.attr("transform","translate( 0, " + (height-40) + ")")
+		.attr("height",1);
+
+	graph.append("rect")
+		.attr("class", "y axisBgRect statics")
+		.attr("width", 74)
+		.attr("height",height)
+		.attr("transform","translate(" + (width-65) + ")")
+
+	graph.append("rect")
+		.attr("class", "y axisRect statics")
+		.attr("width", 1)
+		.attr("height",height-40)
+		.attr("transform","translate(" + (width-65) + ")")
+
 	// display the axes
 	var gX = graph.append("g")
 		.attr("class", "x axis")
 		.attr("transform","translate( 0," + (-20) + ")")
+		.call(xAxis); // Create the X axis markers
 
 	var gY = graph.append("g")
 		.attr("class", "y axis")
-		.attr("transform","translate(" + (width -40) + ")")
-
-
-	// draw the actual axes and rectangles to hide everything behind them
-	gX.append("rect")
-		.attr("class", "x axisBgRect statics")
-		.attr("width", width)
-		.attr("transform","translate( 0, " + (height-20) + ")")
-		.attr("height",40);
-
-	gX.append("rect")
-		.attr("class", "x axisRect statics")
-		.attr("width", width-36)
-		.attr("transform","translate( 0, " + (height-20) + ")")
-		.attr("height",1);
-
-	gY.append("rect")
-		.attr("class", "y axisBgRect statics")
-		.attr("width", 51)
-		.attr("height",height)
-		.attr("transform","translate(-4)")
-
-	gY.append("rect")
-		.attr("class", "y axisRect statics")
-		.attr("width", 1)
-		.attr("height",height-40)
-		.attr("transform","translate(-4)")
-
-	gX.call(xAxis); // Create the X axis markers
-	gY.call(yAxis); // Create the Y axis markers
+		.attr("transform","translate(" + (width -60) + ")")
+		.call(yAxis); // Create the Y axis markers
 
 	graph.call(zoom);
 }
@@ -166,6 +164,18 @@ function refreshChart(chart, dataColumns, hiddenColumns ){
 	var scale = 1/d3.zoomTransform(graph.node()).k;
 	var offset1 = chart.xScale(chart.domainX + 24*scale*scale) * d3.zoomTransform(graph.node()).k;
 	var offset2 = chart.xScale(chart.domainX + 1 + 24*scale*scale) * d3.zoomTransform(graph.node()).k;
+
+	var yAxis = d3.axisRight(chart.yScale)
+		.ticks(12)
+		.tickFormat(function(d){ 
+			if (d < 0 || d == chart.domainY){ 
+				return "";
+			} else {
+				return d >= 1000 ? (d/1000).toFixed(1) + "k" : d;
+			}
+		})
+
+	graph.select(".y.axis").call(yAxis);
 
 	// Non continuous animated graph
 	if(!animatedChartRefresh){
@@ -222,7 +232,7 @@ function toggleChartZoom(chart){
 	chart.yScale.exponent([ logScaleCharts ? 0.5 : 1 ]);
 
 	var yAxis = d3.axisRight(chart.yScale)
-		.ticks(12)
+		// .ticks(12)
 		.tickFormat(function(d){ 
 			if (d < 0 || d == chart.domainY){ 
 				return "";
