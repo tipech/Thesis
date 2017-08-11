@@ -243,20 +243,21 @@ public class DatabaseManager {
 			" total		INTEGER NOT NULL," +
 			" matched	INTEGER NOT NULL," +
 			" limited	INTEGER NOT NULL," +
+			" sentiment	INTEGER NOT NULL," +
 			" time 		INTEGER NOT NULL)";
 
 		createStatus.executeUpdate(createStatusSql);
 		createStatus.close();
 	}
 
-	public void saveStatus(int total, int matched, int limited, long time) throws SQLException{
+	public void saveStatus(int total, int matched, int limited, int sentiment, long time) throws SQLException{
 
 		long adjustedTime = time + Math.round(timeOffset);
 
 		// save status
 		Statement insertStatus = connection.createStatement();
-		String insertStatusSql = "INSERT INTO status ('total','matched','limited','time')" +
-			" VALUES(" + total + ", " + matched + ", " + limited + ", " + adjustedTime + ")";
+		String insertStatusSql = "INSERT INTO status ('total','matched','limited','sentiment','time')" +
+			" VALUES(" + total + ", " + matched + ", " + limited + ", " + sentiment + ", " + adjustedTime + ")";
 
 		insertStatus.executeUpdate(insertStatusSql);
 	}

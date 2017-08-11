@@ -5,7 +5,14 @@
 	<link rel="stylesheet" type="text/css" href="css/index.css">
 </head>
 <body>
-	<div class="header"></div>
+	<div class="header">
+		<div class="title">Correlation</div>
+		<div class="subtitle">
+			<span>Keyword extraction from RSS news feeds</span>
+			<span>News-Twitter stream live comparison and matching</span>
+			<span>Sentiment anallysis of news-related tweets</span>
+		</div>
+	</div>
 	<div class="sidebar">
 		<div class="spinner">
 			<div class="ring"></div>
@@ -20,15 +27,32 @@
 		<a class="stop button">Stop</a>
 		<a class="reset button">Reset</a>
 		<div class="data button tabControls">
-			<a class="data button generalData">General Data</a>
-			<a class="data button groupData">Feed Group Data</a>
-			<a class="data button newsItemData">News Item Data</a>
+			<a class="data button generalData">General Statistics</a>
+			<a class="data button groupData">Groups Statistics</a>
+			<a class="data button newsItemData">News Item Statistics</a>
+		</div>
+		<div class="data button dataTypeControls">
+			<a class="data button rateData">Rates</a>
+			<a class="data button sentimentData">Sentiment</a>
 		</div>
 	</div>
 	<div class="content">
 		<div class="error panel box"></div>
 		<div class="info panel box"></div>
-		<div class="help panel box">Help</div>
+		<div class="help panel box">
+			<div>
+			Welcome to Correlation!<br><br>
+				This tool can extract news headlines and keywords from custom or predefined RSS feeds, then use them to find
+				tweets relevant to those news at real-time! Matched tweets go through processing and sentiment analysis,
+				producing results related to the news item or entire news source groups.<br><br>
+				You can click "Start" to get started, and provide the initial execution settings. If you wish, you can select
+				one of the presets for live tracking, or examine previously collected data.<br><br>
+				This tool was created as part of a Patras University Thesis project. For more information, see the project's
+				<a href="">repository on Github</a> or <a href="">my personal webpage</a>.<br><br>
+				<span>Made by Tilemachos Pechlivanoglou</span>
+			</div>
+			<a id="lastExecution" class="box">Last execution results</a>
+		</div>
 		<div class="control panel sources">
 			<div class="box">
 				<span class="title">Source Groups</span>
@@ -63,6 +87,18 @@
 						</select>					
 					</li>
 					<li class="option">
+						<span class="label">Sentiment Analyzer:</span>
+						<select class="sentimentAnalyzer">
+							<option value="stanford">Stanford CoreNLP</option>
+							<option value="opennlp">OpenNLP</option>
+							<option value="average">Average</option>
+						</select>					
+					</li>
+					<li class="option">
+						<span class="label">Number of keywords:</span>
+						<input id="keywordsCount" type="number" name="keywordsCount" min="10" max="400">
+					</li>
+					<li class="option">
 						<span class="label">News accross sources similarity threshold (0-1):</span>
 						<input id="newsThreshold" type="number" name="newsThreshold" step="0.05" min="0" max="1">
 					</li>
@@ -87,7 +123,8 @@
 		</div>
 		<div class="data box general">
 			<div class="title"><span>General Statistics</span></div>
-			<div id="generalStatisticsChart" class="chartWrapper"></div>
+			<div id="generalStatisticsChart" class="chartWrapper rateData"></div>
+			<div id="generalSentimentChart" class="chartWrapper sentimentData"></div>
 			<ul class="statsList">
 				<li>
 					<span class="label">Total tweets examined:</span>
@@ -153,13 +190,19 @@
 					<span id="feedsNumber" class="value"></span>
 					<span class="unit">&nbsp;feeds</span>
 				</li>
+				<br>
+				<li>
+					<span class="label">Average Sentiment:</span>
+					<span id="sentimentGeneral" class="value"></span>
+				</li>
 			</ul>
 		</div>
 		<div class="data box groupData">
 			<div class="title">
 				<span>News Source Groups</span>
 			</div>
-			<div id="groupStatisticsChart" class="chartWrapper"></div>
+			<div id="groupStatisticsChart" class="chartWrapper rateData"></div>
+			<div id="groupSentimentChart" class="chartWrapper sentimentData"></div>
 			<ul class="groupsList">
 			</ul>
 		</div>
@@ -167,7 +210,8 @@
 			<div class="title">
 				<span>News headlines</span>
 			</div>
-			<div id="newsItemStatisticsChart" class="chartWrapper"></div>
+			<div id="newsItemStatisticsChart" class="chartWrapper rateData"></div>
+			<div id="newsItemSentimentChart" class="chartWrapper sentimentData"></div>
 			<div class="buttonBar">
 				<a id="checkAll">All</a>
 				<a id="checkTop">Top 5</a>
@@ -177,6 +221,8 @@
 					<option value="0" selected="selected">Id</option>
 					<option value="1">Tweets</option>
 					<option value="2">Rate</option>
+					<option value="3">Positive</option>
+					<option value="4">Negative</option>
 				</select>
 			</div>
 			<ul class="newsItemsList">

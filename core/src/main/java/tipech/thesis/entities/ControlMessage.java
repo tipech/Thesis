@@ -24,6 +24,8 @@ public class ControlMessage {
 	private double newsThreshold = 0.3; 	// news item cross-referencing similarity threshold
 	private double tweetThreshold = 0.1; 	// news item - tweet similarity threshold
 	private int updatePeriod = 5;			// how often status gets refreshed
+	private int keywordsCount = 400;		// how many keywords to be used as twitter terms(free limit is 400)
+	private int sentimentAnalyzer = 0;		// 0 - Average,  1 - Stanford, 2 - OpenNLP
 
 	private final List<FeedGroup> groups = new ArrayList<FeedGroup>();
 
@@ -67,6 +69,22 @@ public class ControlMessage {
 						break;
 				}
 
+				String analyzerOption = settings.get("sentimentAnalyzer").getAsString();
+				
+				switch (dateOption){
+					case "stanford":
+						this.sentimentAnalyzer = 1;
+						break;
+					case "opennlp":
+						this.sentimentAnalyzer = 2;
+						break;
+					default:
+						this.sentimentAnalyzer = 0;
+						break;
+				}
+
+				this.keywordsCount = settings.get("keywordsCount").getAsInt();
+
 				// Get status refresh rate and thresholds
 				this.updatePeriod = settings.get("updatePeriod").getAsInt();
 				this.newsThreshold = settings.get("newsThreshold").getAsDouble();
@@ -104,6 +122,14 @@ public class ControlMessage {
 
 	public int getUpdatePeriod(){
 		return updatePeriod;
+	}
+
+	public int getKeywordsCount(){
+		return keywordsCount;
+	}
+
+	public int getSentimentAnalyzer(){
+		return sentimentAnalyzer;
 	}
 
 	public boolean isEmpty() {

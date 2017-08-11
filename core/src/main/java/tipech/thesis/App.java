@@ -98,6 +98,7 @@ public class App
 	private static int tweetTotal;
 	private static int matchTotal;
 	private static int limitTotal;
+	private static int sentimentTotal;
 	private static int lastLimit;
 	private static boolean stopLoop = false;
 
@@ -117,8 +118,6 @@ public class App
 	private static String consumerSecret = "M81KvgaicyJIaQegdgXcdKDeZrSsJz4AVrGv3yoFwuItQQPMay";
 	private static String token = "2591998746-Mx8ZHsXJHzIxAaD2IxYfmzYuL3pYNVnvWoHZgR5";
 	private static String secret = "LJDvEa0jL7QJXxql0NVrULTAniLobe2TAAlnBdXRfm1xF";
-
-	private static int twitterTermsCount = 399; // Twitter's limit is 400
 
 	// ---- Initialization ----
 	private static BlockingQueue<String> msgQueue = new LinkedBlockingQueue<String>(100000);
@@ -197,11 +196,11 @@ public class App
 						setupDatabase();
 						setupStream();
 
-						tweetTotal = 0; matchTotal = 0; limitTotal = 0;
+						tweetTotal = 0; matchTotal = 0; limitTotal = 0; sentimentTotal = 0;
 						startTime = System.currentTimeMillis();
 						refreshTime = startTime;
 
-						dbManager.saveStatus(0, 0, 0, startTime/1000);
+						dbManager.saveStatus(0, 0, 0, 0, startTime/1000);
 
 						System.out.println("Setup done, starting live stream...");
 						System.err.println("STATUS_LIVE");
@@ -217,9 +216,9 @@ public class App
 						if( System.currentTimeMillis() > refreshTime + message.getUpdatePeriod()*1000 ){ 
 
 							// Save status
-							dbManager.saveStatus(tweetTotal, matchTotal, limitTotal, System.currentTimeMillis()/1000);
+							dbManager.saveStatus(tweetTotal, matchTotal, limitTotal, sentimentTotal, System.currentTimeMillis()/1000);
 							refreshTime += message.getUpdatePeriod()*1000;
-							tweetTotal = 0; matchTotal = 0; limitTotal = 0;
+							tweetTotal = 0; matchTotal = 0; limitTotal = 0; sentimentTotal = 0;
 
 							// Check for input
 							ControlMessage newMessage = new ControlMessage(bufferedReader, ControlMessage.NONBLOCKING);
@@ -409,7 +408,7 @@ public class App
 		List<String> finalKeywords = aggregatedTerms.entrySet().stream()
 			.filter(term -> term.getKey().length() > 3 )
 			.sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-			.limit(twitterTermsCount)
+			.limit(message.getKeywordsCount())
 			.map(Map.Entry::getKey)
 			.map(String::toLowerCase)
 			.collect(Collectors.toList());
@@ -460,11 +459,26 @@ public class App
 				)
 				.forEach( newsItem -> {
 					try{
-						int sentiment = (int)Math.round( 
+
+						int sentiment = 2;
+
+						if(message.getSentimentAnalyzer() == 0){
+
+							sentiment = (int)Math.round( 
 								(stanfordSA.findSentiment(tweet.getCleanText()) + openNLPSA.findSentiment(tweet.getCleanText()) ) / 2 );
+						
+						} else if(message.getSentimentAnalyzer() == 1){
+								
+							sentiment = (int)stanfordSA.findSentiment(tweet.getCleanText());
+
+						} else {
+
+							sentiment = (int)openNLPSA.findSentiment(tweet.getCleanText());
+						}						
 
 						dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime()/1000, sentiment);
 						matchTotal++;
+						sentimentTotal+=sentiment;
 
 						System.out.println("\nMatch! News: " + newsItem.getTitle()
 							+ "\n Tweet: " + tweet.getCleanText()

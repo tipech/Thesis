@@ -34,9 +34,36 @@ ul {
 	width: 100%;
 	margin: 10px auto;
 
-	background-color: #EEE;
-	/*border: 1px solid #484;*/
+	background-color: white;
 	box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.header > .title {
+
+	display: inline-block;
+	width: 35%;
+	height: 100%;
+
+	vertical-align: top;
+	line-height: 80px;
+	padding-right: 40px;
+	text-align: right;
+	font-size: 40px;
+	font-weight: bold;
+	border-right: 2px solid #999;
+}
+
+.header > .subtitle {
+
+	height: 100%;
+	display: inline-flex;
+	flex-direction:  column;
+	justify-content: space-around;
+}
+
+.header > .subtitle > span {
+
+	display: block;
 }
 
 .sidebar {
@@ -170,6 +197,39 @@ ul {
 	display: none;
 	background-color: #28F;
 }
+
+.help {
+
+	flex-wrap: wrap;
+}
+
+.help > div {
+
+	width: 100%;
+	text-align: justify;
+}
+
+.help > div > span {
+
+	display: block;
+	width: 100%;
+	text-align: right;
+}
+
+.help > div > a {
+
+	color: black;
+	font-weight: bold;
+}
+
+.help > a {
+
+	margin: 20px;
+	padding: 5px;
+	background-color: #FED;
+	cursor: pointer;
+}
+
 
 /* ============ Settings Content ============= */
 
@@ -480,7 +540,23 @@ ul {
 	cursor: default;
 }
 
-.data.tabControls > a {
+.sidebar .data.dataTypeControls {
+
+	position: absolute;
+	width: 140px;
+	height: 120px;
+	margin: 10px 0;
+
+	display: flex;
+	flex-flow: column;
+	align-items: center;
+
+	background-color: #444;
+	transform: translate(0, 470px);
+	cursor: default;
+}
+
+.data.tabControls > a, .data.dataTypeControls > a {
 
 	background-color: #EEE;
 	width: 100px;
@@ -509,6 +585,15 @@ ul {
 
 	overflow: hidden;
 	cursor: grab;
+}
+
+.chartWrapper.rateData{
+	
+	background-color: #D6D6D666;
+}
+.chartWrapper.sentimentData{
+	
+	background: linear-gradient(rgba(50, 200, 50, 0.5) 10%, rgba(200, 180, 66, 0.5) 45%, rgba(200, 50, 50, 0.5) 90%);
 }
 
 .chartWrapper line, .chartWrapper .domain{ /* axes etc */
@@ -559,7 +644,7 @@ ul {
 /* ---------- General Statistics ------------- */
 
 
-#generalStatisticsChart {
+#generalStatisticsChart, #generalSentimentChart {
 
 	margin: 0 50px 20px;
 	width: 880px;
@@ -585,17 +670,22 @@ ul {
 	text-align: right;
 }
 
+.statsList #sentimentGeneral {
+
+	width: 150px;
+}
+
 
 /* ------------ News Statistics -------------- */
 
-#newsItemStatisticsChart {
+#newsItemStatisticsChart, #newsItemSentimentChart {
 
 	margin: 0 50px 40px;
 	width: 880px;
 	height: 400px;
 }
 
-#groupStatisticsChart {
+#groupStatisticsChart, #groupSentimentChart {
 
 	margin: 0 50px 40px;
 	width: 880px;

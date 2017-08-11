@@ -4,7 +4,7 @@ from threading  import Thread
 from Queue import Queue, Empty
 
 
-status = { 'state':'off', 'settings':{}}
+status = { 'state':'off'}
 process = None;
 projectRoot = "~/Projects/Thesis/" if os.path.isdir("~/Projects/Thesis") else "../" 
 webRoot = projectRoot + "interface/"
@@ -20,9 +20,21 @@ def shutdown():
 	status['state'] = "off"
 	return ""
 
+@post('/ready')
+def ready():
+
+	status['error'] = None
+	if 'settings' in status:
+		status['state'] = "done"
+		return json.dumps(status)
+	else:
+		status['error'] = "No previous data!"
+		return status
+
 @post('/boot')
 def boot():
 
+	status['error'] = None
 	if(status['state'] == "off" or status['state'] == "done" ):
 		global process
 		global processQueue
@@ -53,6 +65,7 @@ def boot():
 @post('/start')
 def start():
 
+	status['error'] = None
 	dataJson = request.body.read()
 
 	if(status['state'] == "idle"):
@@ -71,6 +84,7 @@ def start():
 @get('/status')
 def getStatus():
 	
+	status['error'] = None
 	if(status['state'] != "off" and status['state'] != "done"):
 
 		processStatus = checkStatus()
@@ -86,8 +100,9 @@ def getStatus():
 
 
 @get('/init')
-def initializeData():
+def getInitialData():
 
+	status['error'] = None
 	return json.dumps({
 			'statuses':selectAll("status"),
 			'groups':selectGroupsWithData(),
@@ -100,6 +115,7 @@ def initializeData():
 @get('/data')
 def getLiveData():
 
+	status['error'] = None
 	processStatus = checkStatus()
 
 	if(processStatus == "stop" or processStatus == "error"):
@@ -123,6 +139,7 @@ def getLiveData():
 @post('/stop')
 def stop():
 
+	status['error'] = None
 	if(status['state'] == "live"):
 		global process
 
@@ -217,12 +234,14 @@ def selectGroupsWithData():
 	#	1. We spend an extra grouping step to sum them up
 
 	cursor = dbConnection.cursor()
-	cursor.execute("SELECT groupId, groups.name, groups.color, group_concat(tweetCountTotal) FROM"
-		+ " (SELECT statusId, groupId, sum(newsTweetCount) AS tweetCountTotal FROM"							#E1
-			+ " (SELECT status.id AS statusId, groups.id AS groupId, 0 AS newsTweetCount FROM groups"
+	cursor.execute("SELECT groupId, groups.name, groups.color, group_concat(tweetCountTotal), group_concat(tweetSentimentTotal) FROM"
+		+ " (SELECT statusId, groupId, sum(newsTweetCount) AS tweetCountTotal, sum(newsTweetSentiment) AS tweetSentimentTotal FROM"	#E1
+			+ " (SELECT status.id AS statusId, groups.id AS groupId, 0 AS newsTweetCount, 0 AS newsTweetSentiment FROM groups"
 				+ " CROSS JOIN status"
-			+ " UNION SELECT statusId, newsGroups.groupId AS groupId, sum(tweetCount) AS newsTweetCount FROM newsGroups"
-				+ " LEFT OUTER JOIN (SELECT status.id AS statusId, tweets.newsId AS newsId, count(tweets.id) AS tweetCount FROM status"
+			+ " UNION SELECT statusId, newsGroups.groupId AS groupId,"
+			+ " sum(tweetCount) AS newsTweetCount, sum(tweetSentiment) AS newsTweetSentiment FROM newsGroups"
+				+ " LEFT OUTER JOIN (SELECT status.id AS statusId, tweets.newsId AS newsId,"
+				+ " count(tweets.id) AS tweetCount, sum(tweets.sentiment) AS tweetSentiment FROM status"
 					+ " LEFT OUTER JOIN tweets ON status.time/" + str(status['settings']['updatePeriod']) + " ="
 						+ " (tweets.time - " + str(status['settings']['updatePeriod']) + "/2)/"	
 						+ str(status['settings']['updatePeriod'])
@@ -257,9 +276,10 @@ def selectLastNewsItemCounts():
 	cursor.execute("SELECT newsId, sum(tweetCount), sum(tweetSentiment) FROM"
 		+ " (SELECT news.id AS newsId, 0 AS tweetCount, 0 AS tweetSentiment FROM news"
 		+ " UNION SELECT tweets.newsId AS newsId, count(tweets.id) AS tweetCount, sum(tweets.sentiment) AS tweetSentiment FROM tweets"
-			+ " WHERE tweets.time/ " + str(status['settings']['updatePeriod']) + " ="
-				+ " ((SELECT status.time FROM status ORDER BY status.time DESC LIMIT 1) - " 
-					+  str(status['settings']['updatePeriod'])  + "/2)/" +  str(status['settings']['updatePeriod'])
+			+ " WHERE (tweets.time - " + str(status['settings']['updatePeriod']) + "/2) /"
+				+ str(status['settings']['updatePeriod']) + " ="
+				+ " (SELECT status.time FROM status ORDER BY status.time DESC LIMIT 1,1) /" 
+					+  str(status['settings']['updatePeriod'])
 			+ " GROUP BY newsId)"
 		+ " GROUP BY newsId")
 	result = cursor.fetchall()
@@ -273,13 +293,14 @@ def selectLastGroupCounts():
 	# Another big select, similar to selectGroupsWithData, for only last period and without color data (only part #C)
 
 	cursor = dbConnection.cursor()
-	cursor.execute("SELECT groupId, sum(newsTweetCount) FROM"
-		+ " (SELECT newsGroups.groupId AS groupId, sum(tweetCount) AS newsTweetCount FROM"
-			+ " (SELECT news.id AS newsId, 0 AS tweetCount FROM news"
-			+ " UNION SELECT tweets.newsId AS newsId, count(tweets.id) AS tweetCount FROM tweets"
-				+ " WHERE tweets.time/5 = "
-					+ " ((SELECT status.time FROM status ORDER BY status.time DESC LIMIT 1) - " 
-						+  str(status['settings']['updatePeriod'])  + "/2)/" +  str(status['settings']['updatePeriod'])
+	cursor.execute("SELECT groupId, sum(newsTweetCount), sum(newsTweetSentiment) FROM"
+		+ " (SELECT newsGroups.groupId AS groupId, sum(tweetCount) AS newsTweetCount, sum(tweetSentiment) AS newsTweetSentiment FROM"
+			+ " (SELECT news.id AS newsId, 0 AS tweetCount, 0 AS tweetSentiment FROM news"
+			+ " UNION SELECT tweets.newsId AS newsId, count(tweets.id) AS tweetCount, sum(tweets.sentiment) AS tweetSentiment FROM tweets"
+				+ " WHERE (tweets.time - " + str(status['settings']['updatePeriod']) + "/2) /"
+					+ str(status['settings']['updatePeriod']) + " ="
+					+ " (SELECT status.time FROM status ORDER BY status.time DESC LIMIT 1,1) /" 
+						+  str(status['settings']['updatePeriod'])
 				+ " GROUP BY newsId)"
 				+ " INNER JOIN newsGroups ON newsGroups.newsItemId = newsId"
 			+ " GROUP BY newsId)"

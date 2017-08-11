@@ -22,7 +22,7 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 
 	chart.xScale = d3.scaleLinear().domain([chart.domainX, 0]).range([-5, width-20]); 
 	chart.yScale = d3.scalePow().domain([chart.domainY, 0]).range([0, height-41]);
-	chart.yScale.exponent([ logScaleCharts ? 0.5 : 1 ]);
+	chart.yScale.exponent([ (logScaleCharts && chart.logScalePossible) ? 0.5 : 1 ]);
 
 	var xAxis = d3.axisBottom(chart.xScale)
 		.ticks(10)
@@ -165,18 +165,6 @@ function refreshChart(chart, dataColumns, hiddenColumns ){
 	var offset1 = chart.xScale(chart.domainX + 24*scale*scale) * d3.zoomTransform(graph.node()).k;
 	var offset2 = chart.xScale(chart.domainX + 1 + 24*scale*scale) * d3.zoomTransform(graph.node()).k;
 
-	var yAxis = d3.axisRight(chart.yScale)
-		.ticks(12)
-		.tickFormat(function(d){ 
-			if (d < 0 || d == chart.domainY){ 
-				return "";
-			} else {
-				return d >= 1000 ? (d/1000).toFixed(1) + "k" : d;
-			}
-		})
-
-	graph.select(".y.axis").call(yAxis);
-
 	// Non continuous animated graph
 	if(!animatedChartRefresh){
 
@@ -229,10 +217,15 @@ function refreshChart(chart, dataColumns, hiddenColumns ){
 
 function toggleChartZoom(chart){
 
-	chart.yScale.exponent([ logScaleCharts ? 0.5 : 1 ]);
+	chart.yScale.exponent([ (logScaleCharts && chart.logScalePossible) ? 0.5 : 1 ]);
+
+	resetScaleY(chart);
+}
+
+function resetScaleY(chart){
 
 	var yAxis = d3.axisRight(chart.yScale)
-		// .ticks(12)
+		.ticks(12)
 		.tickFormat(function(d){ 
 			if (d < 0 || d == chart.domainY){ 
 				return "";
@@ -240,7 +233,6 @@ function toggleChartZoom(chart){
 				return d >= 1000 ? (d/1000).toFixed(1) + "k" : d;
 			}
 		})
-	
-	d3.select(chart.wrapperId).select("svg")
-		.select(".y.axis").call(yAxis.scale(chart.yScale));
+
+	d3.select(chart.wrapperId).select("svg").select(".y.axis").call(yAxis.scale(chart.yScale));
 }
