@@ -51,6 +51,8 @@ import tipech.thesis.entities.Tweet;
 
 import tipech.thesis.extraction.RSSFeedParser;
 import tipech.thesis.extraction.KeywordExtractor;
+import tipech.thesis.extraction.StanfordSentimentAnalyzer;
+import tipech.thesis.extraction.OpenNLPSentimentAnalyzer;
 import tipech.thesis.extraction.JaccardComparator;
 import tipech.thesis.extraction.DatabaseManager;
 
@@ -75,6 +77,8 @@ public class App
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
 	private static DatabaseManager dbManager;
 	private static KeywordExtractor keywordExtractor;
+	private static StanfordSentimentAnalyzer stanfordSA;
+	private static OpenNLPSentimentAnalyzer openNLPSA;
 	private static JaccardComparator comparator = new JaccardComparator();
 	private static Client hosebirdClient;
 
@@ -131,11 +135,15 @@ public class App
 		try {
 			if(args.length>0){
 				keywordExtractor = new KeywordExtractor("debug"); // correct model location when running manually
+				openNLPSA = new OpenNLPSentimentAnalyzer(args[0]);
+
 			} else {
 				keywordExtractor =  new KeywordExtractor("stanford");
+				openNLPSA = new OpenNLPSentimentAnalyzer("default");
 			}
 
 			dbManager = new DatabaseManager();
+			stanfordSA = new StanfordSentimentAnalyzer();
 
 			endTime = System.currentTimeMillis() + TIMEOUT*1000; // Timeout after 20 seconds
 
@@ -154,7 +162,7 @@ public class App
 						// Wait for start command
 						if( message.getCommand().equals("start") ){
 
-							System.out.println("Start command received, starting...");
+							System.out.println("Start command received, extracting news items and keywords from RSS feeds...");
 							// message server process we started
 							System.err.println("STATUS_START");
 
@@ -176,7 +184,7 @@ public class App
 						}
 
 						if( !nextFeed() ){
-							System.out.println("Extracting news items and keywords from RSS feeds...");
+							System.out.println("Extraction done, setting up database...");
 							System.err.println("STATUS_SETUP");
 							state = STATE.SETUP;
 						}
@@ -447,13 +455,20 @@ public class App
 			tweetTotal++;
 
 			newsList.stream()
-				.filter( newsItem -> tweet.compare(newsItem, comparator) > message.getTweetThreshold() )
+				.filter( newsItem -> 
+					comparator.similarity(tweet.getWords(), newsItem.getKeywords(), true, true) > message.getTweetThreshold()
+				)
 				.forEach( newsItem -> {
 					try{
-						System.out.println("\nMatch! News: " + newsItem.getTitle() + "\n Tweet: " + tweet.getText());
-						newsItem.setLastTweet(tweet);
-						dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime()/1000);
+						int sentiment = (int)Math.round( 
+								(stanfordSA.findSentiment(tweet.getCleanText()) + openNLPSA.findSentiment(tweet.getCleanText()) ) / 2 );
+
+						dbManager.saveTweetEntry(newsItem.getId(), tweet.getTime()/1000, sentiment);
 						matchTotal++;
+
+						System.out.println("\nMatch! News: " + newsItem.getTitle()
+							+ "\n Tweet: " + tweet.getCleanText()
+							+ "\n Sentiment: " + sentiment );
 					
 					} catch (SQLException e) {
 						e.printStackTrace();

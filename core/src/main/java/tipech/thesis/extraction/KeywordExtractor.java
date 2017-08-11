@@ -30,19 +30,19 @@ public class KeywordExtractor {
 		switch(model){
 			case "default":
 				Configuration.setTaggerType(model);
-				Configuration.setModelFileLocation("../lib/jtopia/model/default/english-lexicon.txt");
+				Configuration.setModelFileLocation("../lib/models/english-lexicon.txt");
 				break;
 			case "openNLP":
 				Configuration.setTaggerType(model);
-				Configuration.setModelFileLocation("../lib/jtopia/model/openNLP/en-pos-maxent.bin");
+				Configuration.setModelFileLocation("../lib/models/openNLP-en-pos-maxent.bin");
 				break;
 			case "stanford":
 				Configuration.setTaggerType(model);
-				Configuration.setModelFileLocation("../lib/jtopia/model/stanford/english-left3words-distsim.tagger");
+				Configuration.setModelFileLocation("../lib/models/stanford-english-left3words-distsim.tagger");
 				break;
 			case "debug":
 				Configuration.setTaggerType("stanford");
-				Configuration.setModelFileLocation("lib/jtopia/model/stanford/english-left3words-distsim.tagger");
+				Configuration.setModelFileLocation("lib/models/stanford-english-left3words-distsim.tagger");
 				break;
 		}
 

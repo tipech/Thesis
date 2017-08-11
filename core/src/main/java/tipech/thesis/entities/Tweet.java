@@ -20,6 +20,7 @@ public class Tweet {
 	private long time;
 	private String user;
 	private String text;
+	private String cleanText;
 	private List<String> words;
 
 	public Tweet(String rawTweet) {
@@ -33,6 +34,8 @@ public class Tweet {
 		this.user = jsonTweet.get("user").getAsJsonObject().get("name").getAsString();
 		this.text = jsonTweet.get("text").getAsString();
 		this.time = jsonTweet.get("timestamp_ms").getAsLong();
+
+		this.cleanText = text.replaceAll("(@[A-Za-z0-9]+)|(&amp;)|([^\\w'.,-;!? \\n\\t])|(\\w+:\\/\\/\\S+)"," ");
 
 		words = Arrays.asList( text.split(" |,|#|!|\\?|\\(|\\)|\\[|\\]|\"|\n|…") ).stream()
 			.filter( word -> !word.startsWith("@") && !word.startsWith("ht") )
@@ -56,13 +59,12 @@ public class Tweet {
 		return text;
 	}
 
-	public List<String> getWords(){
-		return words;
+	public String getCleanText() {
+		return cleanText;
 	}
 
-	public double compare(NewsItem item, JaccardComparator comparator) {
-
-		return comparator.similarity(getWords(), item.getKeywords(), true, true);
+	public List<String> getWords(){
+		return words;
 	}
 
 	@Override

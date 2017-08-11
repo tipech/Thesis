@@ -6,6 +6,7 @@ var animatedChartRefresh = false;
 var logScaleCharts = true;
 
 var timer;
+var errorCounter = 0;
 var lastUpdateTime = 0;
 var settings = [];
 var dataset = {
@@ -60,14 +61,6 @@ function flashError( element, color ) {
 }
 
 function showStatus( status ) {
-
-	if ( status.error !== undefined ) {
-
-		showError( status.error );
-	} else {
-
-		$( ".error.box" ).hide();
-	}
 
 	switch ( status.state ) {
 		case "off":
@@ -169,6 +162,14 @@ function showStatus( status ) {
 			$( ".data" ).show();
 			break;
 	}
+
+	if ( status.error !== undefined ) {
+
+		showError( status.error );
+	} else {
+
+		$( ".error.box" ).hide();
+	}
 }
 
 function showError( errorText ) {
@@ -182,7 +183,7 @@ function showError( errorText ) {
 
 function showInfo( infoText ) {
 
-	$( ".info.box" ).append( infoText + "<br><br>" );
+	$( ".info.box" ).append( infoText + "<br>" );
 	$( ".info.box" ).show();
 }
 
@@ -547,9 +548,16 @@ function getAPI( url, callback ) {
 		dataType: "json",
 		error: function( error ) {
 
-			clearTimeout(timer);
-			loadPage();
-			showError( error.responseText ? error.responseText : "Server process unreachable!" );
+			if( errorCounter > 3){
+
+				clearTimeout(timer);
+				showStatus({'state':'off', 'error':"Server process unreachable, shut down."})
+			
+			} else {
+
+				showError( error.responseText ? error.responseText : "Server process unreachable!" );
+				errorCounter++;
+			}
 		},
 		success: function( data ) {
 
@@ -580,8 +588,6 @@ function loadPage() {
 
 	getAPI( "status", function( status ) {
 
-		showStatus( status );
-
 		if ( status.state == "boot" ) {
 
 			clearTimeout( timer );
@@ -594,6 +600,8 @@ function loadPage() {
 		} else if (status.state == "live") {
 			showStatus(status);
 			initializeData(function(){refreshData()});
+		} else {
+			showStatus( status );
 		}
 	} );
 }
@@ -662,7 +670,7 @@ function start() {
 				waitUntilState( "setup", function( status ){
 
 					// when keyword extraction is done, show a message
-					showInfo("Extraction done, setting up Twitter stream...");
+					showInfo("Extraction done, setting up database and Twitter stream...");
 				});	
 
 				// wait until live processing starts
@@ -730,7 +738,14 @@ function initializeData(callback) {
 				}
 			dataset.newsItems[i].total = initializeSumBuffer(item[3].split(",").map(function(value){ return parseInt(value); }));
 			dataset.newsItems[i].rate = initializeRateBuffer(dataset.newsItems[i].total, dataset.newsItems[i].rate);
+			dataset.newsItems[i].sentiment = initializeSentimentBuffer(
+					item[4].split(",").map(function(value){ return parseInt(value); }),
+					item[3].split(",").map(function(value){ return parseInt(value); })
+				);
 		}
+
+		console.log(dataset.newsItems)
+		// console.log(dataset.newsItems.map(function(item){item.sentiment.join(",")}).join("\n"))
 
 		// show the news items chart
 		chartList.newsItems.domainX = settings.windowPeriod/settings.refreshPeriod;
@@ -832,11 +847,11 @@ function refreshData(){
 		if( timeNow % 4*settings.updatePeriod < 1 ){
 
 			showNewsItems(sortNewsItems())
+		}
 
-			var maxNewsRate = d3.max(dataset.newsItems.map(function(item){ return d3.max(item.rate) }))
-			chartList.newsItems.domainY = maxNewsRate * 1.2;
-			chartList.newsItems.yScale.domain([chartList.newsItems.domainY, 0])
-		}	
+		var maxNewsRate = d3.max(dataset.newsItems.map(function(item){ return d3.max(item.rate) }))
+		chartList.newsItems.domainY = maxNewsRate * 1.2;
+		chartList.newsItems.yScale.domain([chartList.newsItems.domainY, 0])
 	}
 
 	// continue loop
@@ -913,6 +928,8 @@ function refreshData(){
 
 function stop() {
 
+	clearTimeout(timer);
+
 	$.post( {
 		url: "stop",
 		dataType: "json",
@@ -928,8 +945,6 @@ function stop() {
 				showStatus( status );
 
 			} else {
-
-				clearTimeout(timer);
 
 				// Show loading...
 				showStatus( status );

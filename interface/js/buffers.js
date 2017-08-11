@@ -7,7 +7,6 @@ function initializeSumBuffer( data ) {
 	// prepare data buffers according to window size
 	var bufferSize = Math.floor(settings.windowPeriod / settings.refreshPeriod);
 
-
 	var sumBuffer = new Array(bufferSize).fill(0);
 
 	// calculate final total
@@ -18,14 +17,14 @@ function initializeSumBuffer( data ) {
 	// populate the buffer
 	for (var i = 1; i < bufferSize/settings.updatePeriod; i++) {
 
-		var bufferStep = i*settings.updatePeriod;
+		var bufferPointer = i*settings.updatePeriod;
 		if(data.length-i < 0){
 
-			sumBuffer[bufferStep] = 0;
+			sumBuffer[bufferPointer] = 0;
 
 		} else if(data.length-i > 0){
 			// store the true value at the appropriate position
-			sumBuffer[bufferStep] = sumBuffer[bufferStep - settings.updatePeriod] - data[data.length - i];
+			sumBuffer[bufferPointer] = sumBuffer[bufferPointer - settings.updatePeriod] - data[data.length - i];
 
 			// interpolate the rest of the values
 			for (var j = 1; j < settings.updatePeriod; j++) {
@@ -35,12 +34,12 @@ function initializeSumBuffer( data ) {
 				var wOld = j/settings.updatePeriod;
 
 				// produce interpolated value
-				sumBuffer[bufferStep -j] = Math.round(wNew* sumBuffer[bufferStep] + wOld* sumBuffer[bufferStep -settings.updatePeriod])
+				sumBuffer[bufferPointer -j] = Math.round(wNew* sumBuffer[bufferPointer] + wOld* sumBuffer[bufferPointer -settings.updatePeriod])
 			}
 
 		} else { // we are at first status
 
-			sumBuffer[bufferStep] = data[0];
+			sumBuffer[bufferPointer] = data[0];
 
 			// interpolate first values
 			for (var j = 1; j < settings.updatePeriod; j++) {
@@ -49,7 +48,7 @@ function initializeSumBuffer( data ) {
 				var wNew = 1 - j/settings.updatePeriod;
 
 				// produce interpolated value
-				sumBuffer[bufferStep - j] = Math.round(wNew * sumBuffer[bufferStep])
+				sumBuffer[bufferPointer - j] = Math.round(wNew * sumBuffer[bufferPointer])
 			}
 		}
 	}
@@ -95,6 +94,68 @@ function initializeRateBuffer( sumBuffer ){
 	}
 
 	return rateBuffer;
+}
+
+
+function initializeSentimentBuffer( sentimentData, sumData ){
+
+	// prepare data buffers according to window size, "recent" data are in 1/20th of window
+	var bufferSize = Math.floor(settings.windowPeriod / settings.refreshPeriod);
+	var lastValue = 0;
+
+	var sentimentBuffer = new Array(bufferSize).fill(0);
+
+	// populate the buffer, most recent to oldest
+	for (var i = Math.floor( bufferSize/settings.updatePeriod )-1 ; i >= 0 ; i--) {
+
+		var bufferPointer = i*settings.updatePeriod;
+		var dataPointer = sentimentData.length - i;
+		if(sentimentData.length-i < 0){
+
+			sentimentBuffer[bufferPointer] = 0;
+
+		} else if(sentimentData.length-i > 0){
+			// store the true value at the appropriate position
+			if(sumData[dataPointer] != 0){ // if tweets matched in period, calculate sentiment
+
+				sentimentBuffer[bufferPointer] = sentimentData[dataPointer] / sumData[dataPointer];
+				lastValue = sentimentBuffer[bufferPointer];
+
+			} else { // no tweets, put last value
+
+				sentimentBuffer[bufferPointer] = lastValue;
+			}
+
+			// interpolate the rest of the values
+			// for (var j = 1; j < settings.updatePeriod; j++) {
+
+			// 	// interpolation weights
+			// 	var wNew = 1 - j/settings.updatePeriod;
+			// 	var wOld = j/settings.updatePeriod;
+
+			// 	// produce interpolated value
+			// 	sentimentBuffer[bufferPointer -j] =
+			// 		wNew* sentimentBuffer[bufferPointer] + wOld* sentimentBuffer[bufferPointer -settings.updatePeriod]
+			// }
+
+		} else { // we are at first status
+
+			sentimentBuffer[bufferPointer] = sentimentData[0] / sumData[dataPointer];
+
+			// interpolate first values
+			for (var j = 1; j < settings.updatePeriod; j++) {
+
+				// interpolation weights, old value is 0 anyway
+				var wNew = 1 - j/settings.updatePeriod;
+
+				// produce interpolated value
+				sentimentBuffer[bufferPointer - j] = Math.round(wNew * sentimentBuffer[bufferPointer])
+			}
+		}
+	}
+
+
+	return sentimentBuffer;
 }
 
 

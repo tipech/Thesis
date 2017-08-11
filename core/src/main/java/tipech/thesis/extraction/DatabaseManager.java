@@ -211,17 +211,18 @@ public class DatabaseManager {
 		String createTweetEntriesSql = "CREATE TABLE tweets " +
 			"(id 		INTEGER PRIMARY KEY," +
 			" newsId	INTEGER NOT NULL," +
-			" time 		INTEGER NOT NULL)";
+			" time		INTEGER NOT NULL," +
+			" sentiment	INTEGER NOT NULL)";
 
 		createTweetEntries.executeUpdate(createTweetEntriesSql);
 		createTweetEntries.close();
 	}
 
-	public void saveTweetEntry(int newsId, long time) throws SQLException{
+	public void saveTweetEntry(int newsId, long time, int sentiment) throws SQLException{
 
 		// save single tweet entry
 		Statement insertTweet = connection.createStatement();
-		String insertTweetSql = "INSERT INTO tweets ('newsId','time') VALUES(" + newsId + ", " + time + ")";
+		String insertTweetSql = "INSERT INTO tweets ('newsId','time', 'sentiment') VALUES(" + newsId + ", " + time + ", " + sentiment + ")";
 
 		insertTweet.executeUpdate(insertTweetSql);
 	}

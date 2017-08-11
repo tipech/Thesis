@@ -183,19 +183,22 @@ def selectNewsItemsWithData():
 	#	1. We join the two top selects into one, which now contains both news data and tweet counts
 
 	cursor = dbConnection.cursor()
-	cursor.execute("SELECT newsData.id, newsData.title, newsData.mergedColor, tweetData.tweetCount FROM " 		#A1
+	cursor.execute("SELECT newsData.id, newsData.title, newsData.mergedColor, tweetData.count, tweetData.sentiment FROM "	#A1
 		+ " (SELECT news.id AS id, news.title AS title, group_concat(groups.color) AS mergedColor FROM newsGroups" 	#B1
 			+ " LEFT OUTER JOIN news ON newsGroups.newsItemId = news.id" 											#B2
 			+ " LEFT OUTER JOIN groups ON newsgroups.groupId = groups.id" 											#B3
 			+ " GROUP BY news.id) AS newsData" 																		#B4
-			+ " LEFT OUTER JOIN (SELECT newsIdTotal AS id, group_concat(tweetCountTotal) AS tweetCount FROM"
-				+ " (SELECT statusId AS statusIdTotal, newsId AS newsIdTotal, sum(tweetCount) AS tweetCountTotal FROM"	#C1
-					+ " (SELECT status.id AS statusId, news.id AS newsId, 0 AS tweetCount FROM news"			#C2
-						+ " CROSS JOIN status"																	#C2
-					+ " UNION SELECT status.id AS statusId, tweets.newsId AS newsId, count(tweets.id) AS tweetCount FROM status"#C3
-						+ " LEFT OUTER JOIN tweets ON status.time/" + str(status['settings']['updatePeriod']) + " ="		#C4
-							+ " (tweets.time - " + str(status['settings']['updatePeriod']) + "/2)/"							#C4
-							+ str(status['settings']['updatePeriod'])														#C4
+			+ " LEFT OUTER JOIN (SELECT newsIdTotal AS id,"
+			+ " group_concat(tweetCountTotal) AS count, group_concat(tweetSentimentTotal) AS sentiment FROM"
+				+ " (SELECT statusId AS statusIdTotal, newsId AS newsIdTotal,"								#C1
+				+ " sum(tweetCount) AS tweetCountTotal, sum(tweetSentiment) AS tweetSentimentTotal FROM"	#C1
+					+ " (SELECT status.id AS statusId, news.id AS newsId, 0 AS tweetCount, 0 AS tweetSentiment FROM news"	#C2
+						+ " CROSS JOIN status"																				#C2
+					+ " UNION SELECT status.id AS statusId, tweets.newsId AS newsId,"							#C3
+					+ " count(tweets.id) AS tweetCount, sum(tweets.sentiment) AS tweetSentiment FROM status"	#C3
+						+ " LEFT OUTER JOIN tweets ON status.time/" + str(status['settings']['updatePeriod']) + " ="	#C4
+							+ " (tweets.time - " + str(status['settings']['updatePeriod']) + "/2)/"						#C4
+							+ str(status['settings']['updatePeriod'])													#C4
 						+ " GROUP BY tweets.newsId, status.id)"					#C5		
 					+ " GROUP BY statusId, newsId)"							#C6
 				+ " GROUP BY newsIdTotal) AS tweetData"					#C7
@@ -251,9 +254,9 @@ def selectLastNewsItemCounts():
 	# Another big select, similar to selectNewsItemsWithData, for only last period and without group data (only part #C)
 
 	cursor = dbConnection.cursor()
-	cursor.execute("SELECT newsId, sum(tweetCount) FROM"
-		+ " (SELECT news.id AS newsId, 0 AS tweetCount FROM news"
-		+ " UNION SELECT tweets.newsId AS newsId, count(tweets.id) AS tweetCount FROM tweets"
+	cursor.execute("SELECT newsId, sum(tweetCount), sum(tweetSentiment) FROM"
+		+ " (SELECT news.id AS newsId, 0 AS tweetCount, 0 AS tweetSentiment FROM news"
+		+ " UNION SELECT tweets.newsId AS newsId, count(tweets.id) AS tweetCount, sum(tweets.sentiment) AS tweetSentiment FROM tweets"
 			+ " WHERE tweets.time/ " + str(status['settings']['updatePeriod']) + " ="
 				+ " ((SELECT status.time FROM status ORDER BY status.time DESC LIMIT 1) - " 
 					+  str(status['settings']['updatePeriod'])  + "/2)/" +  str(status['settings']['updatePeriod'])
