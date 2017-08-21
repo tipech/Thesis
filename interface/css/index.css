@@ -442,6 +442,21 @@ ul {
 	background-color: #a91717;
 	color: white;
 }
+.preset._2 {
+
+	background-color: #0000cc;
+	color: white;
+}
+.preset._3 {
+
+	background-color: #666666;
+	color: white;
+}
+.preset._4 {
+
+	background-color: #006600;
+	color: white;
+}
 
 .control.panel.settings::after {
 

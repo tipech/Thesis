@@ -438,8 +438,74 @@ function applyPreset1() {
 	addFeed( group1, "http://feeds.bbci.co.uk/news/rss.xml" );
 	addFeed( group1, "http://feeds.bbci.co.uk/news/world/rss.xml" );
 
-	var group2 = addGroup( "Fox News", "#fff45b" );
+	var group2 = addGroup( "Reuters", "#ff6600" );
+	addFeed( group2, "http://feeds.reuters.com/reuters/topNews" );
+	addFeed( group2, "http://feeds.reuters.com/Reuters/worldNews" );
+
+	$( ".date option[value='today']").prop('selected', true);
+	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
+
+	$( "#keywordsCount" ).val( "400" );
+	$( "#updatePeriod" ).val( "5" );
+	$( "#refreshPeriod" ).val( "1" );
+	$( "#windowPeriod" ).val( "10" );
+	$( "#newsThreshold" ).val( "0.3" );
+	$( "#tweetThreshold" ).val( "0.1" );
+}
+
+function applyPreset2() {
+
+	$( ".group" ).remove();
+
+	var group1 = addGroup( "Sky and Telescope", "#006600" );
+	addFeed( group1, "http://www.skyandtelescope.com/astronomy-news/feed/" );
+
+	var group2 = addGroup( "NASA", "#0000cc" );
+	addFeed( group2, "www.jpl.nasa.gov/multimedia/rss/news.xml" );
+
+	$( ".date option[value='today']").prop('selected', true);
+	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
+
+	$( "#keywordsCount" ).val( "400" );
+	$( "#updatePeriod" ).val( "5" );
+	$( "#refreshPeriod" ).val( "1" );
+	$( "#windowPeriod" ).val( "10" );
+	$( "#newsThreshold" ).val( "0.3" );
+	$( "#tweetThreshold" ).val( "0.1" );
+}
+
+function applyPreset3() {
+
+	$( ".group" ).remove();
+
+	var group1 = addGroup( "Left Bias", "#a91717" );
+	addFeed( group1, "http://www.huffingtonpost.com/section/front-page/feed" );
+	addFeed( group1, "http://rss.nbcnews.com/" );
+
+	var group2 = addGroup( "Right Bias", "#fff45b" );
 	addFeed( group2, "http://feeds.foxnews.com/foxnews/latest?format=xml" );
+	addFeed( group2, "http://feeds.feedburner.com/breitbart?format=xml" );
+
+	$( ".date option[value='today']").prop('selected', true);
+	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
+
+	$( "#keywordsCount" ).val( "400" );
+	$( "#updatePeriod" ).val( "5" );
+	$( "#refreshPeriod" ).val( "1" );
+	$( "#windowPeriod" ).val( "10" );
+	$( "#newsThreshold" ).val( "0.3" );
+	$( "#tweetThreshold" ).val( "0.1" );
+}
+
+function applyPreset4() {
+
+	$( ".group" ).remove();
+
+	var group1 = addGroup( "Soccer", "#006600" );
+	addFeed( group1, "http://www.espnfc.com/rss" );
+
+	var group2 = addGroup( "Basketball", "#ff6600" );
+	addFeed( group2, "http://www.nba.com/rss/nba_rss.xml" );
 
 	$( ".date option[value='today']").prop('selected', true);
 	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
@@ -1289,10 +1355,7 @@ $( document ).ready( function() {
 
 	// Presets
 	$( ".preset._1" ).click( applyPreset1 );
-	$( ".preset._2" ).click( function() {
-
-		// DEBUG
-	} );
+	$( ".preset._2" ).click( applyPreset2 ) ;
 
 
 	// -------------- Data Management ------------

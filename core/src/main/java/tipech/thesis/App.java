@@ -369,7 +369,7 @@ public class App
 	}
 
 	private static void setupDatabase() throws SQLException {
-
+		
 		// Store the feed groups
 		System.out.println("Storing feed groups...");				
 		dbManager.saveFeedGroups( groupsList );
