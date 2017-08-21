@@ -300,9 +300,13 @@ public class App
 		List<FeedItem> feedItems = feed.getEntries();
 		List<NewsItem> newNewsItems = feedItems.stream()
 			// Filter out too old
-			.filter( headline ->
-				LocalDate.parse(headline.getPubDate(), rssDateFormat).isAfter(filterDate)
-			)
+			.filter( headline -> {
+				try{
+					return LocalDate.parse(headline.getPubDate().replace("EDT","GMT"), rssDateFormat).isAfter(filterDate);
+				} catch (Exception e) {
+					return false;
+				}
+			})
 			// Turn remaining headlines into news items
 			.map( headline -> 
 				new NewsItem(headline.getTitle() + " |&| " + headline.getDescription(), feed) 
@@ -425,7 +429,7 @@ public class App
 			.authentication(hosebirdAuth)
 			.endpoint(hosebirdEndpoint)
 			.processor(new StringDelimitedProcessor(msgQueue))
-			.proxy("icache.intranet.gr", 80)		// only used behind a proxy
+			// .proxy("icache.intranet.gr", 80)		// only used behind a proxy
 			// .eventMessageQueue(eventQueue)		// optional: to process client events
 			.build();
 
