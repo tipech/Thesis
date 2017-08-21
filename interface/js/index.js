@@ -283,7 +283,7 @@ function removeGroup( event ) {
 function addFeed( group, url ) {
 
 	// check url
-	if ( url !== "" ) {
+	if ( url !== "" && url.startsWith("http")) {
 
 		var feed = $(
 			'<li class="feed">' +
@@ -461,9 +461,9 @@ function applyPreset2() {
 	addFeed( group1, "http://www.skyandtelescope.com/astronomy-news/feed/" );
 
 	var group2 = addGroup( "NASA", "#0000cc" );
-	addFeed( group2, "www.jpl.nasa.gov/multimedia/rss/news.xml" );
+	addFeed( group2, "http://www.jpl.nasa.gov/multimedia/rss/news.xml" );
 
-	$( ".date option[value='today']").prop('selected', true);
+	$( ".date option[value='week']").prop('selected', true);
 	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
 
 	$( "#keywordsCount" ).val( "400" );
@@ -486,7 +486,7 @@ function applyPreset3() {
 	addFeed( group2, "http://feeds.foxnews.com/foxnews/latest?format=xml" );
 	addFeed( group2, "http://feeds.feedburner.com/breitbart?format=xml" );
 
-	$( ".date option[value='today']").prop('selected', true);
+	$( ".date option[value='2days']").prop('selected', true);
 	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
 
 	$( "#keywordsCount" ).val( "400" );
@@ -507,7 +507,7 @@ function applyPreset4() {
 	var group2 = addGroup( "Basketball", "#ff6600" );
 	addFeed( group2, "http://www.nba.com/rss/nba_rss.xml" );
 
-	$( ".date option[value='today']").prop('selected', true);
+	$( ".date option[value='week']").prop('selected', true);
 	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
 
 	$( "#keywordsCount" ).val( "400" );
@@ -1356,6 +1356,8 @@ $( document ).ready( function() {
 	// Presets
 	$( ".preset._1" ).click( applyPreset1 );
 	$( ".preset._2" ).click( applyPreset2 ) ;
+	$( ".preset._3" ).click( applyPreset3 ) ;
+	$( ".preset._4" ).click( applyPreset4 ) ;
 
 
 	// -------------- Data Management ------------

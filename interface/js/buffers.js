@@ -241,10 +241,5 @@ function refreshRateBuffer(rateBuffer, sumBuffer, bufferPointer){
 	rateBuffer.unshift( newRateSmoothed );
 	rateBuffer.pop();
 
-
-	if(rateBuffer == dataset.groups[1].rate){
-
-		// console.log(sumBuffer[bufferPointer] - sumBuffer[shortWindow+bufferPointer])	
-	}
 	
 }

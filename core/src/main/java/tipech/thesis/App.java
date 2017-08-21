@@ -302,14 +302,20 @@ public class App
 			// Filter out too old
 			.filter( headline -> {
 				try{
-					return LocalDate.parse(headline.getPubDate().replace("EDT","GMT"), rssDateFormat).isAfter(filterDate);
+					return LocalDate.parse(
+							headline.getPubDate().replace("EDT","GMT").replaceAll("\\+\\d\\d\\d\\d","GMT"),
+							rssDateFormat)
+						.isAfter(filterDate);
 				} catch (Exception e) {
+					System.out.println(e);
 					return false;
 				}
 			})
-			// Turn remaining headlines into news items
+			// Turn remaining headlines into news items, keep description to 100 chars max
 			.map( headline -> 
-				new NewsItem(headline.getTitle() + " |&| " + headline.getDescription(), feed) 
+				new NewsItem(headline.getTitle()
+					+ " |&| "
+					+ headline.getDescription().substring(0, Math.min(headline.getDescription().length(), 100)), feed) 
 			)
 			// Extract Keywords
 			.peek( newsItem -> newsItem.extractTerms(keywordExtractor))
@@ -417,10 +423,15 @@ public class App
 			.map(String::toLowerCase)
 			.collect(Collectors.toList());
 
+		System.out.println(finalKeywords);
+
 		hosebirdEndpoint.trackTerms(finalKeywords);
 		hosebirdEndpoint.languages( Arrays.asList("en", "gr") ); 
 
-		System.out.println("Setting up twitter stream...");
+		if(finalKeywords.size() == 0){
+			System.err.println("STATUS_STOP");
+			System.exit(0);
+		}
 
 		// Final setup
 		hosebirdClient = new ClientBuilder()
@@ -429,7 +440,7 @@ public class App
 			.authentication(hosebirdAuth)
 			.endpoint(hosebirdEndpoint)
 			.processor(new StringDelimitedProcessor(msgQueue))
-			// .proxy("icache.intranet.gr", 80)		// only used behind a proxy
+			.proxy("icache.intranet.gr", 80)		// only used behind a proxy
 			// .eventMessageQueue(eventQueue)		// optional: to process client events
 			.build();
 
