@@ -71,7 +71,7 @@ public class App
 	/* =============== General Setup =============== */
 
 	private static STATE state;
-	private static int TIMEOUT = 40*60; // seconds until process termination
+	private static int TIMEOUT = 2*60*60; // seconds until process termination
 
 	// ---- Managers ----
 	private static BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(System.in));
@@ -180,6 +180,9 @@ public class App
 						
 						} catch(SSLException e){
 							System.out.println("RSS over https connection not supported!");
+						
+						} catch(Exception e){
+							System.out.println(e);
 						}
 
 						if( !nextFeed() ){
@@ -283,7 +286,7 @@ public class App
 		feedIndex = 0;
 	}
 
-	private static void processSingleFeed() throws SSLException {
+	private static void processSingleFeed() throws SSLException, Exception {
 
 		// Get final copies of variables for reading inside the streams
 		final LocalDate filterDate = message.getRejectDate();
@@ -311,11 +314,11 @@ public class App
 					return false;
 				}
 			})
-			// Turn remaining headlines into news items, keep description to 100 chars max
+			// Turn remaining headlines into news items, keep description to 200 chars max
 			.map( headline -> 
 				new NewsItem(headline.getTitle()
 					+ " |&| "
-					+ headline.getDescription().substring(0, Math.min(headline.getDescription().length(), 100)), feed) 
+					+ headline.getDescription().substring(0, Math.min(headline.getDescription().length(), 200)), feed) 
 			)
 			// Extract Keywords
 			.peek( newsItem -> newsItem.extractTerms(keywordExtractor))
@@ -440,7 +443,7 @@ public class App
 			.authentication(hosebirdAuth)
 			.endpoint(hosebirdEndpoint)
 			.processor(new StringDelimitedProcessor(msgQueue))
-			.proxy("icache.intranet.gr", 80)		// only used behind a proxy
+			// .proxy("icache.intranet.gr", 80)		// only used behind a proxy
 			// .eventMessageQueue(eventQueue)		// optional: to process client events
 			.build();
 

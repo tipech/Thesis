@@ -206,6 +206,7 @@ ul {
 .help > div {
 
 	width: 100%;
+	padding: 50px;
 	text-align: justify;
 }
 
@@ -224,7 +225,7 @@ ul {
 
 .help > a {
 
-	margin: 20px;
+	margin: 50px;
 	padding: 5px;
 	background-color: #FED;
 	cursor: pointer;
@@ -604,11 +605,15 @@ ul {
 
 .chartWrapper.rateData{
 	
-	background-color: #D6D6D666;
+	background: 
+		linear-gradient(to right, transparent 95%, rgba(255, 255, 255, 1) 95%),
+		#D6D6D666;
 }
 .chartWrapper.sentimentData{
 	
-	background: linear-gradient(rgba(50, 200, 50, 0.5) 10%, rgba(200, 180, 66, 0.5) 45%, rgba(200, 50, 50, 0.5) 90%);
+	background: 
+		linear-gradient(to right, transparent 95%, rgba(255, 255, 255, 1) 95%),
+		linear-gradient(rgba(50, 200, 50, 0.5) 10%, rgba(200, 180, 66, 0.5) 45%, rgba(200, 50, 50, 0.5) 90%);
 }
 
 .chartWrapper line, .chartWrapper .domain{ /* axes etc */
@@ -637,7 +642,7 @@ ul {
 .chartWrapper .legend {
 
 	position: relative;
-	width: 11%;
+	width: 12%;
 	max-height: 310px;
 	padding: 4px 8px; 
 

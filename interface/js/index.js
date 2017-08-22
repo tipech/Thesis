@@ -480,7 +480,7 @@ function applyPreset3() {
 
 	var group1 = addGroup( "Left Bias", "#a91717" );
 	addFeed( group1, "http://www.huffingtonpost.com/section/front-page/feed" );
-	addFeed( group1, "http://rss.nbcnews.com/" );
+	addFeed( group1, "http://feeds.feedburner.com/thedailybeast/articles?format=xml" );
 
 	var group2 = addGroup( "Right Bias", "#fff45b" );
 	addFeed( group2, "http://feeds.foxnews.com/foxnews/latest?format=xml" );
@@ -995,7 +995,7 @@ function initializeVisuals(){
 	chartList.general.domainX = domainX;
 	chartList.generalSentiment.domainX = domainX;
 	initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total", "Matched"], ["#EEDF4F", "#60BD68"]);
-	initializeChart( chartList.generalSentiment, "Time", "Sentiment", ["Average"], ["#4F67EE"]);
+	initializeChart( chartList.generalSentiment, "Time", "Sentiment", ["Sentiment"], ["#4F67EE"]);
 
 
 	// ---------------- News Items Statistics ----------------
@@ -1073,10 +1073,12 @@ function updateData() {
 			updateSentimentBuffer(dataset.newsItems[i].sentiment, data.newsItems[i][2], data.newsItems[i][1]);
 		}
 
-		for (var i = 0; i < dataset.groups.length; i++) {
+		for (var i = 0; i < data.groups.length; i++) {
 
-			updateSumBuffer(dataset.groups[i].total, data.groups[i][1]);
-			updateSentimentBuffer(dataset.groups[i].sentiment, data.groups[i][2], data.groups[i][1]);
+			var groupId = data.groups[i][0]
+
+			updateSumBuffer(dataset.groups[groupId].total, data.groups[i][1]);
+			updateSentimentBuffer(dataset.groups[groupId].sentiment, data.groups[i][2], data.groups[i][1]);
 		}
 	} );
 }
@@ -1150,7 +1152,7 @@ function refreshVisuals(index){
 	var matchedPercent   = 100 * dataset.general.matched[bufferPointer] / dataset.general.total[bufferPointer];
 	var totalProjected   = dataset.general.limited[bufferPointer] + dataset.general.total[bufferPointer];
 	var limitedPercent   = 100 * dataset.general.limited[bufferPointer] / totalProjected;
-	var matchedProjected = 100 * dataset.general.matched[bufferPointer] / limitedPercent;
+	var matchedProjected = 100 * dataset.general.matched[bufferPointer] / (100 - limitedPercent);
 	var timeElapsed	  = index + dataset.general.lastTime - dataset.general.startTime;
 
 	refreshGeneralStatistics(
@@ -1290,7 +1292,7 @@ $( document ).ready( function() {
 
 	$(window).on("keyup", function(e){ 
 
-		if(e.which == 112){ // toggle log - linear chart scale on "1"
+		if(e.which == 112){ // toggle log - linear chart scale on F1
 
 			logScaleCharts = !logScaleCharts;
 
@@ -1303,11 +1305,11 @@ $( document ).ready( function() {
 
 			refreshVisuals(refreshIndex)
 
-		} else if(e.which == 113){ // toggle animated - chunky charts
+		} else if(e.which == 113){ // toggle animated - chunky charts on F2
 			
 			animatedChartRefresh = !animatedChartRefresh;
 
-		} else if(e.which == 115){ // change data smoothing factor
+		} else if(e.which == 115){ // change data smoothing factor on F4
 
 			clearTimeout(timer);
 
@@ -1424,7 +1426,7 @@ $( document ).ready( function() {
 	// configure settings according to browser compatibility
 	if(typeof InstallTrigger !== 'undefined'){ // Firefox
 
-		animatedChartRefresh = true;
+		// animatedChartRefresh = true;
 	}
 
 

@@ -44,11 +44,22 @@
 			Welcome to Correlation!<br><br>
 				This tool can extract news headlines and keywords from custom or predefined RSS feeds, then use them to find
 				tweets relevant to those news at real-time! Matched tweets go through processing and sentiment analysis,
-				producing results related to the news item or entire news source groups.<br><br>
+				producing results related to the news item or entire news source groups.<br><br><br>
+
 				You can click "Start" to get started, and provide the initial execution settings. If you wish, you can select
-				one of the presets for live tracking, or examine previously collected data.<br><br>
-				This tool was created as part of a Patras University Thesis project. For more information, see the project's
-				<a href="">repository on Github</a> or <a href="">my personal webpage</a>.<br><br>
+				one of the presets for live tracking, or examine previously collected data.<br><br><br>
+
+				During live data output, you can change a number of settings:
+				<ul>
+					<li>Press F1 to toggle between linear and log scale charts</li>
+					<li>Press F2 to toggle between animated or stepped chart update</li>
+					<li>Press F4 to switch interpolation levels, possible values are 1, 4, 7 and 10.</li>
+				</ul>
+				<br><br>
+
+				This tool was created as part of a Thesis project for Patras University. For more information, see the project's
+				<a href="">repository on Github</a> or <a href="">my personal webpage</a>.<br><br><br>
+
 				<span>Made by Tilemachos Pechlivanoglou</span>
 			</div>
 			<a id="lastExecution" class="box">Last execution results</a>
@@ -178,17 +189,17 @@
 				<li>
 					<span class="label">Number of news items examined:</span>
 					<span id="newsItemsNumber" class="value"></span>
-					<span class="unit">&nbsp;items</span>
+					<span class="unit">&nbsp;item(s)</span>
 				</li>
 				<li>
 					<span class="label">Number of news source groups:</span>
 					<span id="groupsNumber" class="value"></span>
-					<span class="unit">&nbsp;groups</span>
+					<span class="unit">&nbsp;group(s)</span>
 				</li>
 				<li>
 					<span class="label">Number of RSS feeds examined:</span>
 					<span id="feedsNumber" class="value"></span>
-					<span class="unit">&nbsp;feeds</span>
+					<span class="unit">&nbsp;feed(s)</span>
 				</li>
 				<br>
 				<li>
