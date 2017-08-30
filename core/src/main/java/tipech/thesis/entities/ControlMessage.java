@@ -35,6 +35,8 @@ public class ControlMessage {
 
 			String rawMessage = bufferedReader.readLine();
 			JsonObject message = new JsonParser().parse(rawMessage).getAsJsonObject();
+
+			System.out.println("Received message:" + rawMessage);
 			
 			this.command = message.get("command").getAsString();
 

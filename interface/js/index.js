@@ -29,7 +29,8 @@ var chartList = {
 	'general':{
 		'wrapperId':"#generalStatisticsChart",
 		'domainX':0,
-		'domainY':80,
+		'domainYMax':80,
+		'domainYMin':0,
 		'xScale':{},
 		'yScale':{},
 		'type': "area",
@@ -38,7 +39,8 @@ var chartList = {
 	'generalSentiment':{
 		'wrapperId':"#generalSentimentChart",
 		'domainX':0,
-		'domainY':4,
+		'domainYMax':2,
+		'domainYMin':-2,
 		'xScale':{},
 		'yScale':{},
 		'type': "line",
@@ -47,7 +49,8 @@ var chartList = {
 	'newsItems':{
 		'wrapperId':"#newsItemStatisticsChart",
 		'domainX':0,
-		'domainY':50,
+		'domainYMax':50,
+		'domainYMin':0,
 		'xScale':{},
 		'yScale':{},
 		'type': "line",
@@ -56,7 +59,8 @@ var chartList = {
 	'newsItemsSentiment':{
 		'wrapperId':"#newsItemSentimentChart",
 		'domainX':0,
-		'domainY':4,
+		'domainYMax':2,
+		'domainYMin':-2,
 		'xScale':{},
 		'yScale':{},
 		'type': "line",
@@ -65,16 +69,18 @@ var chartList = {
 	'groups':{
 		'wrapperId':"#groupStatisticsChart",
 		'domainX':0,
-		'domainY':50,
+		'domainYMax':50,
+		'domainYMin':0,
 		'xScale':{},
 		'yScale':{},
-		'type': "area",
+		'type': "line",
 		'logScalePossible':true
 	},
 	'groupsSentiment':{
 		'wrapperId':"#groupSentimentChart",
 		'domainX':0,
-		'domainY':4,
+		'domainYMax':2,
+		'domainYMin':-2,
 		'xScale':{},
 		'yScale':{},
 		'type': "line",
@@ -460,16 +466,13 @@ function applyPreset2() {
 	var group1 = addGroup( "Sky and Telescope", "#006600" );
 	addFeed( group1, "http://www.skyandtelescope.com/astronomy-news/feed/" );
 
-	var group2 = addGroup( "NASA", "#0000cc" );
-	addFeed( group2, "http://www.jpl.nasa.gov/multimedia/rss/news.xml" );
-
 	$( ".date option[value='week']").prop('selected', true);
 	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
 
 	$( "#keywordsCount" ).val( "400" );
-	$( "#updatePeriod" ).val( "5" );
+	$( "#updatePeriod" ).val( "20" );
 	$( "#refreshPeriod" ).val( "1" );
-	$( "#windowPeriod" ).val( "10" );
+	$( "#windowPeriod" ).val( "40" );
 	$( "#newsThreshold" ).val( "0.3" );
 	$( "#tweetThreshold" ).val( "0.1" );
 }
@@ -478,11 +481,11 @@ function applyPreset3() {
 
 	$( ".group" ).remove();
 
-	var group1 = addGroup( "Left Bias", "#a91717" );
+	var group1 = addGroup( "Liberal (Left) Bias", "#0000CC" );
 	addFeed( group1, "http://www.huffingtonpost.com/section/front-page/feed" );
 	addFeed( group1, "http://feeds.feedburner.com/thedailybeast/articles?format=xml" );
 
-	var group2 = addGroup( "Right Bias", "#fff45b" );
+	var group2 = addGroup( "Conservative (Right) Bias", "#CC0000" );
 	addFeed( group2, "http://feeds.foxnews.com/foxnews/latest?format=xml" );
 	addFeed( group2, "http://feeds.feedburner.com/breitbart?format=xml" );
 
@@ -490,9 +493,9 @@ function applyPreset3() {
 	$( ".sentimentAnalyzer option[value='average']").prop('selected', true);
 
 	$( "#keywordsCount" ).val( "400" );
-	$( "#updatePeriod" ).val( "5" );
-	$( "#refreshPeriod" ).val( "1" );
-	$( "#windowPeriod" ).val( "10" );
+	$( "#updatePeriod" ).val( "120" );
+	$( "#refreshPeriod" ).val( "20" );
+	$( "#windowPeriod" ).val( "600" );
 	$( "#newsThreshold" ).val( "0.3" );
 	$( "#tweetThreshold" ).val( "0.1" );
 }
@@ -552,24 +555,24 @@ function refreshGeneralStatistics(
 	var sentiment = Math.round(sentimentGeneral *100 )/100;
 	var sentimentText = "Neutral"
 
-	if(sentiment > 2.5 && sentiment <= 3){
+	if(sentiment > 0.5 && sentiment <= 2){
 
 		sentimentText = "Positive"
 	
-	} else if(sentiment > 3){
+	} else if(sentiment > 1){
 
 		sentimentText = "Very Positive"
 
-	} else if(sentiment < 1.5 && sentiment >= 1){
+	} else if(sentiment > -1.5 && sentiment <= -1){
 
 		sentimentText = "Negative"
 	
-	} else if(sentiment < 1){
+	} else if(sentiment < -1){
 
 		sentimentText = "Very Negative"
 	}
 
-	$("#sentimentGeneral").text(sentimentText);
+	$("#sentimentGeneral").text(sentimentText + " (" + sentiment + ")");
 
 	$( ".spinner .circle .status" ).text( (currentRate/60).toFixed(2) + " t/s" );
 }
@@ -584,7 +587,8 @@ function showNewsItems(newsItemsList) {
 		newsElement = $('<li class="newsItem box" id=newsItem_' + newsItem.id + '></li>');
 		newsElement.append('<label class="filter"><input type="checkbox" checked="checked"><span></span><label>');
 		newsElement.append('<span>#' + (newsItem.id+1) + '</span>');
-		newsElement.append('<div class="headline">' + newsItem.headline.replace(/\|&\|/g, "<br>") + '</div>');
+		var headline = $('<p>' + newsItem.headline.replace(/(<([^>]+)>)/ig, "").replace(/\|&\|/g, "<br>") + '</p>');
+		newsElement.append('<div class="headline">' + headline.text() + '</div>');
 		newsElement.append('<div class="data"><span class="total"></span><span class="rate"></span><span class="sentiment"></span></div>');
 
 		newsElement.find("[type=checkbox]:checked + span").css({"background-color":newsItem.graphColor})
@@ -617,27 +621,27 @@ function refreshNewsItems(newsItemsList, bufferPointer) {
 		var sentiment = Math.round(newsItem.sentiment[bufferPointer] *100 )/100;
 		var sentimentText = "Neutral"
 
-		if(sentiment > 2.5 && sentiment <= 3){
+	if(sentiment > 0.5 && sentiment <= 2){
 
-			sentimentText = "Positive"
-		
-		} else if(sentiment > 3){
+		sentimentText = "Positive"
+	
+	} else if(sentiment > 1){
 
-			sentimentText = "Very Positive"
+		sentimentText = "Very Positive"
 
-		} else if(sentiment < 1.5 && sentiment >= 1){
+	} else if(sentiment > -1.5 && sentiment <= -1){
 
-			sentimentText = "Negative"
-		
-		} else if(sentiment < 1){
+		sentimentText = "Negative"
+	
+	} else if(sentiment < -1){
 
-			sentimentText = "Very Negative"
-		}
+		sentimentText = "Very Negative"
+	}
 
 
 		$('#newsItem_' + newsItem.id + ' .total').text(newsItem.total[bufferPointer] + " tweets")
 		$('#newsItem_' + newsItem.id + ' .rate').text( (newsItem.rate[0]).toFixed(2) + " tw/min")
-		$('#newsItem_' + newsItem.id + ' .sentiment').text(sentimentText)
+		$('#newsItem_' + newsItem.id + ' .sentiment').text(sentimentText + " (" + sentiment + ")")
 
 	});
 }
@@ -709,27 +713,27 @@ function refreshGroups(groupsList, bufferPointer) {
 		var sentiment = Math.round(group.sentiment[bufferPointer] *100 )/100;
 		var sentimentText = "Neutral"
 
-		if(sentiment > 2.5 && sentiment <= 3){
+	if(sentiment > 0.5 && sentiment <= 2){
 
-			sentimentText = "Positive"
-		
-		} else if(sentiment > 3){
+		sentimentText = "Positive"
+	
+	} else if(sentiment > 1){
 
-			sentimentText = "Very Positive"
+		sentimentText = "Very Positive"
 
-		} else if(sentiment < 1.5 && sentiment >= 1){
+	} else if(sentiment > -1.5 && sentiment <= -1){
 
-			sentimentText = "Negative"
-		
-		} else if(sentiment < 1){
+		sentimentText = "Negative"
+	
+	} else if(sentiment < -1){
 
-			sentimentText = "Very Negative"
-		}
+		sentimentText = "Very Negative"
+	}
 
 
 		$('#groupItem_' + group.id + ' .total').text(group.total[bufferPointer] + " tweets")
 		$('#groupItem_' + group.id + ' .rate').text( (group.rate[0]).toFixed(2) + " tw/min")
-		$('#groupItem_' + group.id + ' .sentiment').text(sentimentText)
+		$('#groupItem_' + group.id + ' .sentiment').text(sentimentText + " (" + sentiment + ")")
 
 	});
 }
@@ -993,7 +997,7 @@ function initializeVisuals(){
 
 	// show the general statistics chart
 	chartList.general.domainX = domainX;
-	chartList.generalSentiment.domainX = domainX;
+	chartList.generalSentiment.domainX = domainX - settings.updatePeriod;
 	initializeChart( chartList.general, "Time", "Rate (tweets/minute)", ["Total", "Matched"], ["#EEDF4F", "#60BD68"]);
 	initializeChart( chartList.generalSentiment, "Time", "Sentiment", ["Sentiment"], ["#4F67EE"]);
 
@@ -1003,7 +1007,7 @@ function initializeVisuals(){
 	// show the news items charts
 	chartList.newsItems.domainX = domainX;
 	var maxNewsRate = d3.max(dataset.newsItems.map(function(item){ return d3.max(item.rate) }))
-	chartList.newsItems.domainY = maxNewsRate * 1.2;
+	chartList.newsItems.domainYMax = maxNewsRate * 1.2;
 	initializeChart( chartList.newsItems, "Time", "Rate (tweets/minute)",
 			dataset.newsItems.map(function(item){return "Item: " + (item.id + 1)}),			// item names
 			dataset.newsItems.map(function(item){return item.graphColor})				// item colors
@@ -1031,7 +1035,7 @@ function initializeVisuals(){
 	// show the groups chart
 	chartList.groups.domainX = domainX;
 	var maxGroupsRate = d3.max(dataset.groups.map(function(item){ return d3.max(item.rate) }))
-	chartList.groups.domainY = maxGroupsRate * 1.2;
+	chartList.groups.domainYMax = maxGroupsRate * 1.2;
 	initializeChart( chartList.groups, "Time", "Rate (tweets/minute)",
 			dataset.groups.map(function(item){return item.name}),			// item names
 			dataset.groups.map(function(item){return item.color})			// item colors
@@ -1100,32 +1104,35 @@ function refresh(){
 		}
 
 		var maxGeneralRate = d3.max(dataset.general.matchedRate)
-		chartList.general.domainY = maxGeneralRate * 1.2;
-		chartList.general.yScale.domain([chartList.general.domainY, 0])
+		chartList.general.domainYMax = maxGeneralRate * 1.2;
+		chartList.general.yScale.domain([chartList.general.domainYMax, 0])
 
 		var maxNewsRate = d3.max(dataset.newsItems.map(function(item){ return d3.max(item.rate) }))
-		chartList.newsItems.domainY = maxNewsRate * 1.2;
-		chartList.newsItems.yScale.domain([chartList.newsItems.domainY, 0])
+		chartList.newsItems.domainYMax = maxNewsRate * 1.2;
+		chartList.newsItems.yScale.domain([chartList.newsItems.domainYMax, 0])
 
 		var maxGroupsRate = d3.max(dataset.groups.map(function(item){ return d3.max(item.rate) }))
-		chartList.groups.domainY = maxGroupsRate * 1.2;
-		chartList.groups.yScale.domain([chartList.groups.domainY, 0])
+		chartList.groups.domainYMax = maxGroupsRate * 1.2;
+		chartList.groups.yScale.domain([chartList.groups.domainYMax, 0])
 	}
 
-	// continue loop
-	timer = setTimeout( refresh, settings.refreshPeriod * 1000 );
-
 	// calculate what part of the refresh cycle we are in
-	refreshIndex = ((timeNow - lastUpdateTime + parseInt(settings.updatePeriod) -1) % settings.updatePeriod);
+	refreshIndex = ((timeNow - lastUpdateTime + parseInt(settings.updatePeriod) -1) % settings.updatePeriod) ;
+
+	// console.log(refreshIndex)
 
 	refreshData(refreshIndex);
 	refreshVisuals(refreshIndex);
+
+
+	// continue loop
+	timer = setTimeout( refresh, settings.refreshPeriod * 1000 );
 }
 
 function refreshData(index){
 
 	// "first" place in latest buffer for this refresh
-	var bufferPointer = settings.updatePeriod / settings.refreshPeriod - index -1;
+	var bufferPointer = Math.floor(settings.updatePeriod / settings.refreshPeriod - ((index -1 ) / settings.refreshPeriod));
 
 	refreshRateBuffer(dataset.general.tweetRate, dataset.general.total, bufferPointer);
 	refreshRateBuffer(dataset.general.matchedRate, dataset.general.matched, bufferPointer);
@@ -1144,7 +1151,7 @@ function refreshData(index){
 function refreshVisuals(index){
 
 	// "first" place in latest buffer for this refresh
-	var bufferPointer = settings.updatePeriod / settings.refreshPeriod - index -1;
+	var bufferPointer = Math.floor(settings.updatePeriod / settings.refreshPeriod - ((index -1 ) / settings.refreshPeriod));
 
 	// ---------------- General Statistics ----------------
 

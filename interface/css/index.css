@@ -206,7 +206,7 @@ ul {
 .help > div {
 
 	width: 100%;
-	padding: 50px;
+	padding: 20px 50px;
 	text-align: justify;
 }
 
@@ -225,7 +225,7 @@ ul {
 
 .help > a {
 
-	margin: 50px;
+	margin: 20px 50px;
 	padding: 5px;
 	background-color: #FED;
 	cursor: pointer;

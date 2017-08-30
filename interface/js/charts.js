@@ -21,21 +21,23 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 		.attr("width", "100%").attr("height", "100%")
 
 	chart.xScale = d3.scaleLinear().domain([chart.domainX, 0]).range([-5, width-20]); 
-	chart.yScale = d3.scalePow().domain([chart.domainY, 0]).range([0, height-41]);
+	chart.yScale = d3.scalePow().domain([chart.domainYMax, chart.domainYMin]).range([0, height-41]);
 	chart.yScale.exponent([ (logScaleCharts && chart.logScalePossible) ? 0.5 : 1 ]);
 
 	var xAxis = d3.axisBottom(chart.xScale)
 		.ticks(10)
 		.tickFormat(function(d){
+
+			var timeD = d  * settings.refreshPeriod;
 			if(d == 0 || d == chart.domainX){
 				return "";
 			}
-			var time = Math.floor(d/60)%3600 + "m";
-			if(d%60 != 0 ){
-				time += ", " + d%60 + "s"
+			var time = Math.floor((timeD%3600)/60) + "m";
+			if(timeD%60 != 0 ){
+				time += ", " + timeD%60 + "s"
 			}
-			if(d>3600){
-				time = Math.floor(d/3600) + "h, " + time;
+			if(timeD>3600){
+				time = Math.floor(timeD/3600) + "h, " + time;
 			}
 			return time;
 		})
@@ -46,7 +48,7 @@ function initializeChart( chart, labelX, labelY, columnNames, columnColors ){
 	var yAxis = d3.axisRight(chart.yScale)
 		// .ticks(12)
 		.tickFormat(function(d){ 
-			if (d < 0 || d == chart.domainY){ 
+			if (d < -1.5 || d == chart.domainYMax){ 
 				return "";
 			} else {
 				return d >= 1000 ? (d/1000).toFixed(1) + "k" : d;
@@ -227,7 +229,7 @@ function resetScaleY(chart){
 	var yAxis = d3.axisRight(chart.yScale)
 		.ticks(12)
 		.tickFormat(function(d){ 
-			if (d < 0 || d == chart.domainY){ 
+			if (d < 0 || d == chart.domainYMax){ 
 				return "";
 			} else {
 				return d >= 1000 ? (d/1000).toFixed(1) + "k" : d;

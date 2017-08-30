@@ -74,9 +74,11 @@ function mergeColors( colorString ) {
 	result.green /= i;
 	result.blue /= i;
 
-	var finalColor = "#" + Math.round(result.red).toString(16) 
-		+ Math.round(result.green).toString(16)
-		+ Math.round(result.blue).toString(16);
+	var finalColor = "#"
+
+	finalColor += (result.red < 16 )? "0" + Math.round(result.red).toString(16) : Math.round(result.red).toString(16);
+	finalColor += (result.green < 16 )? "0" + Math.round(result.green).toString(16) : Math.round(result.green).toString(16);
+	finalColor += (result.blue < 16 )? "0" + Math.round(result.blue).toString(16) : Math.round(result.blue).toString(16);
 
 	return finalColor;
 }

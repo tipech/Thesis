@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale; 
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -108,6 +109,7 @@ public class App
 
 	private static ControlMessage message;
 
+
 	/* ============================================= */
 
 
@@ -131,6 +133,9 @@ public class App
 
 	public static void main( String[] args )
 	{
+
+		rssDateFormat = rssDateFormat.withLocale(Locale.ENGLISH);
+
 		try {
 			if(args.length>0){
 				keywordExtractor = new KeywordExtractor("debug"); // correct model location when running manually
@@ -146,6 +151,7 @@ public class App
 
 			endTime = System.currentTimeMillis() + TIMEOUT*1000; // Timeout after 20 seconds
 
+			System.out.println("System initialized, waiting for start command.");
 			state = STATE.IDLE;
 			
 
@@ -306,7 +312,7 @@ public class App
 			.filter( headline -> {
 				try{
 					return LocalDate.parse(
-							headline.getPubDate().replace("EDT","GMT").replaceAll("\\+\\d\\d\\d\\d","GMT"),
+							headline.getPubDate().replace("EDT","GMT").replaceAll("[\\+\\-]\\d\\d\\d\\d","UTC"),
 							rssDateFormat)
 						.isAfter(filterDate);
 				} catch (Exception e) {

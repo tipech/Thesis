@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import javax.net.ssl.SSLException;
 import java.net.URL;
+import java.net.URLConnection;
 
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
@@ -137,7 +138,15 @@ public class RSSFeedParser {
 
 	private InputStream read() throws SSLException{
 		try {
-			return url.openStream();
+
+			URLConnection connection = url.openConnection();
+			connection.setRequestProperty(
+					"User-Agent",
+					"Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.95 Safari/537.11"
+				);
+			connection.connect();
+
+			return connection.getInputStream();
 		} catch (SSLException e){
 			throw new SSLException(e);
 		} catch (IOException e) {

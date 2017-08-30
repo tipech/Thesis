@@ -1,7 +1,8 @@
-import json, time, os, subprocess, sqlite3
+import json, time, subprocess, os, sqlite3
 from bottle import get, post, route, error, request, run, static_file
 from threading  import Thread
-from Queue import Queue, Empty
+from queue import Queue, Empty
+import asyncPopen
 
 
 status = { 'state':'off'}
@@ -38,11 +39,11 @@ def boot():
 	if(status['state'] == "off" or status['state'] == "done" ):
 		global process
 		global processQueue
-		process = subprocess.Popen(
+		process = asyncPopen.Popen(
 				[
 					"java",
-					"-Dhttp.proxyHost=icache",
-					"-Dhttp.proxyPort=80",
+					# "-Dhttp.proxyHost=icache",
+					# "-Dhttp.proxyPort=80",
 					"-jar",
 					projectRoot + "core/target/wrapper-jar-with-dependencies.jar"
 				],
@@ -70,8 +71,9 @@ def start():
 
 	if(status['state'] == "idle"):
 		global process
-
-		process.stdin.write('{ "command": "start", "data": ' + dataJson + '}\n')
+		command = b'{ "command": "start", "data": ' + dataJson + b'}\n'
+		# print(command)
+		process.send(command)
 
 		# TODO check response
 
@@ -143,7 +145,7 @@ def stop():
 	if(status['state'] == "live"):
 		global process
 
-		process.stdin.write('{ "command": "stop" }\n')
+		process.send(b'{ "command": "stop" }\n')
 		process.kill()
 
 		status['state'] = "done"
@@ -336,7 +338,7 @@ def checkStatus():
 			elif(line.rstrip() == "STATUS_STOP"):
 				processStatus = "stop"
 			else:
-				print line
+				print (line)
 
 		return processStatus
 
@@ -354,7 +356,8 @@ def exhaust_queue(processQueue):
 	except Empty:
 		return ""
 	else: 
-		return line.rstrip() + "\n" + exhaust_queue(processQueue)
+		result = line.rstrip() + b'\n'
+		return result.decode('utf-8') + exhaust_queue(processQueue)
 
 # ================ Static Pages =================
 
@@ -408,7 +411,7 @@ def test():
 	result = cursor.fetchall()
 	cursor.close()
 
-	print result
+	print (result)
 
 
 
